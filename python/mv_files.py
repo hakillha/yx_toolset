@@ -6,7 +6,7 @@ from os.path import join as pj
 
 def parse_args():
     parser = argparse.ArgumentParser(description='Merge folders')
-    parser.add_argument('prepend', help='Choose whether to prepend the folder name to each file name')
+    parser.add_argument('--prepend', type=bool, default=False, help='Choose whether to prepend the folder name to each file name')
     parser.add_argument('--ft_path')
     parser.add_argument('--out_path', help='Please create \'images\' and \'labels\' folders under it first')
     return parser.parse_args()
