@@ -283,8 +283,8 @@ def main(_):
                 writer.write(tf_example.SerializeToString())
     writer.close()
 
-    print(ALL_DATA)
-    print(BAD_DATA)
+    # print(ALL_DATA)
+    # print(BAD_DATA)
 
 if __name__ == '__main__':
     tf.compat.v1.app.run()
