@@ -51,12 +51,26 @@ def write_one_image(json_dict, out_json_dict, categories, img_id, anno_id):
     # print(json.dumps(json_dict, indent=4))
     for anno in json_dict['outputs']['object']:
         if anno['name'] in categories.keys() and 'polygon' in anno.keys():
+            xmin = width
+            ymin = height
+            xmax = 0
+            ymax = 0
             cate_id = categories[anno['name']]
             point_set = []
             for i in range(len(anno['polygon']) / 2):
-                point_set.append(anno['polygon']['x' + str(i + 1)])
-                point_set.append(anno['polygon']['y' + str(i + 1)])
+                x = anno['polygon']['x' + str(i + 1)]
+                y = anno['polygon']['y' + str(i + 1)]
+                xmin = min(x, xmin)
+                ymin = min(y, ymin)
+                xmax = max(x, xmax)
+                ymax = max(y, ymax)
+                point_set.append(x)
+                point_set.append(y)
+            bb = [xmin, ymin, xmax - xmin + 1, ymax - ymin + 1]
+            area = bb[2] * bb[3]
             anno_entry = {
+                'area': area,
+                'bbox': bb,
                 'iscrowd': 0,
                 'image_id': img_id,
                 'category_id': cate_id,
@@ -107,11 +121,7 @@ def convert(ft_files, json_file):
 
 if __name__ == '__main__':
     import argparse
-
     parser = argparse.ArgumentParser()
-    # set as optional for now
-    # parser.add_argument('--ft_dir', type=str)
-    # parser.add_argument('--coco_json_file', type=str)
     parser.add_argument('--ft_dir', default='yunxikeji-01-2019-10-21', help='Please use absolute path', type=str)
     parser.add_argument('--coco_json_file', default='cocoformat_out.json', type=str)
     args = parser.parse_args()
