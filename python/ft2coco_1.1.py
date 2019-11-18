@@ -12,7 +12,9 @@ from os.path import join as pj
 
 # PRE_DEFINE_CATEGORIES = None
 # PRE_DEFINE_CATEGORIES = {'roa': 1, 'loa': 2, 'soa': 3, 'sloa': 4, 'sroa': 5,
-#                          'ooa': 6, 'cf': 7, 'rg': 8, 'np': 9, 'cross': 10,'ld':11,'zyfgd':12,'lcfgd':13,'lmj':14,'sfwl':15,'sdwl':16,'sfyl':17,'sdyl':18,'dfyl':19,'sl':20}
+#                          'ooa': 6, 'cf': 7, 'rg': 8, 'np': 9, 'cross': 10,
+#                          'ld':11,'zyfgd':12,'lcfgd':13,'lmj':14,'sfwl':15,
+#                          'sdwl':16,'sfyl':17,'sdyl':18,'dfyl':19,'sl':20}
 PRE_DEFINE_CATEGORIES = {'roa': 1, 'loa': 2, 'soa': 3, 'sloa': 4, 'sroa': 5,
                          'ooa': 6, 'cf': 7, 'rg': 8, 'np': 9, 'cross': 10}
 broken_f_cnt = 0
@@ -67,6 +69,7 @@ def write_one_image(json_dict, out_json_dict, categories, anno_id, full_fname, i
 
     # paste this whenever you want to visualize the json record
     # print(json.dumps(json_dict, indent=4))
+    valid_anno = 0
     for anno in json_dict['outputs']['object']:
         if anno['name'] in categories.keys() and 'polygon' in anno.keys():
             xmin = width
@@ -75,7 +78,7 @@ def write_one_image(json_dict, out_json_dict, categories, anno_id, full_fname, i
             ymax = 0
             cate_id = categories[anno['name']]
             point_set = []
-            for i in range(len(anno['polygon']) / 2):
+            for i in range(int(len(anno['polygon']) / 2)):
                 x = anno['polygon']['x' + str(i + 1)]
                 y = anno['polygon']['y' + str(i + 1)]
                 if(x <0) :
@@ -96,6 +99,11 @@ def write_one_image(json_dict, out_json_dict, categories, anno_id, full_fname, i
                 # point_set.append(int(y))
 
             # assert len(point_set) != 0
+            if len(point_set) <= 4:
+                print('Illegal segmentation annotation!')
+                global illegal_anno_cnt
+                illegal_anno_cnt += 1
+                continue
             
             bb = [xmin, ymin, xmax - xmin + 1, ymax - ymin + 1]
             area = bb[2] * bb[3]
@@ -119,8 +127,13 @@ def write_one_image(json_dict, out_json_dict, categories, anno_id, full_fname, i
             #     print('Illegal segmentation annotation!')
             #     print(anno_entry)
 
+
             out_json_dict['annotations'].append(anno_entry)
+            valid_anno += 1
             anno_id += 1
+
+    if valid_anno == 0:
+        return
 
     out_json_dict['images'].append(img_info)
 
@@ -165,7 +178,7 @@ if __name__ == '__main__':
     import argparse
 
     parser = argparse.ArgumentParser()
-    parser.add_argument('--ft_dir', default='../../yunxikeji-01-2019-10-21/', help='Please use absolute path', type=str)
+    parser.add_argument('--ft_dir', default='../../yunxikeji-01-2019-10-21/', type=str)
     parser.add_argument('--train_json_file', default='cocoformat_train_out_1.json', type=str)
     parser.add_argument('--valid_json_file', default='cocoformat_valid_out_1.json', type=str)
     parser.add_argument('--valid_ratio', default=0.15)
