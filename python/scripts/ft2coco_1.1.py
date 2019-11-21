@@ -1,3 +1,5 @@
+#
+
 import cv2
 import json
 import math
@@ -11,12 +13,12 @@ coco = COCO()
 from os.path import join as pj
 
 # PRE_DEFINE_CATEGORIES = None
-# PRE_DEFINE_CATEGORIES = {'roa': 1, 'loa': 2, 'soa': 3, 'sloa': 4, 'sroa': 5,
-#                          'ooa': 6, 'cf': 7, 'rg': 8, 'np': 9, 'cross': 10,
-#                          'ld':11,'zyfgd':12,'lcfgd':13,'lmj':14,'sfwl':15,
-#                          'sdwl':16,'sfyl':17,'sdyl':18,'dfyl':19,'sl':20}
 PRE_DEFINE_CATEGORIES = {'roa': 1, 'loa': 2, 'soa': 3, 'sloa': 4, 'sroa': 5,
-                         'ooa': 6, 'cf': 7, 'rg': 8, 'np': 9, 'cross': 10}
+                         'ooa': 6, 'cf': 7, 'rg': 8, 'np': 9, 'cross': 10,
+                         'ld':11,'zyfgd':12,'lcfgd':13,'lmj':14,'sfwl':15,
+                         'sdwl':16,'sfyl':17,'sdyl':18,'dfyl':19,'sl':20}
+# PRE_DEFINE_CATEGORIES = {'roa': 1, 'loa': 2, 'soa': 3, 'sloa': 4, 'sroa': 5,
+#                          'ooa': 6, 'cf': 7, 'rg': 8, 'np': 9, 'cross': 10}
 broken_f_cnt = 0
 illegal_anno_cnt = 0
 
@@ -177,11 +179,14 @@ def convert(ft_files, json_file):
 if __name__ == '__main__':
     import argparse
 
-    parser = argparse.ArgumentParser()
-    parser.add_argument('--ft_dir', default='../../yunxikeji-01-2019-10-21/', type=str)
+    cur_file_path = os.path.abspath(os.path.dirname(__file__))
+    parser = argparse.ArgumentParser('将丰图测试集标注文件转换成COCO格式')
+    parser.add_argument('--ft_dir', default=pj(cur_file_path, '../../yunxikeji-01-2019-10-21/'), type=str,
+                        help='丰图数据文件存放路径，该路径下应为images、labels文件夹')
     parser.add_argument('--train_json_file', default='cocoformat_train_out_1.json', type=str)
-    parser.add_argument('--valid_json_file', default='cocoformat_valid_out_1.json', type=str)
-    parser.add_argument('--valid_ratio', default=0.15)
+    parser.add_argument('--valid_json_file', default='cocoformat_valid_out_1.json', type=str,
+                        help='输出的json文件存放地址，默认为该脚本路径下，请同时注明文件名如：XXX.json')
+    parser.add_argument('--valid_ratio', default=1)
     args = parser.parse_args()
 
     # add os.path.dirname(os.path.abspath(__file__)), 
@@ -189,8 +194,11 @@ if __name__ == '__main__':
     ftfilelist = [pj(args.ft_dir, 'labels', item) for item in os.listdir(pj(args.ft_dir, 'labels')) if item.endswith('.json')]
     random.shuffle(ftfilelist)
     train_size = int(math.floor(len(ftfilelist) * (1 - args.valid_ratio)))
-    convert(ftfilelist[:train_size], args.train_json_file)
-    convert(ftfilelist[train_size:], args.valid_json_file)
+    if args.valid_ratio == 1:
+        convert(ftfilelist, args.valid_json_file)
+    else:
+        convert(ftfilelist[:train_size], args.train_json_file)
+        convert(ftfilelist[train_size:], args.valid_json_file)
     global broken_f_cnt, illegal_anno_cnt
     print('# of broken images: ' + str(broken_f_cnt))
     print('# of illegal segmentation annotations: ' + str(illegal_anno_cnt))
