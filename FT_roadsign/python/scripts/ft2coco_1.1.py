@@ -1,4 +1,7 @@
+# Conver FT segmentation data into COCO format.
+# The bounding rectangles of the polygon annotations are considered the bounding boxes.
 #
+# TODO: Add COCO polygon verification
 
 import cv2
 import json
@@ -97,10 +100,8 @@ def write_one_image(json_dict, out_json_dict, categories, anno_id, full_fname, i
                 ymax = max(y, ymax)
                 point_set.append(x)
                 point_set.append(y)
-                # point_set.append(int(x))
-                # point_set.append(int(y))
 
-            # assert len(point_set) != 0
+            # A simple check to detect the illegal segementation annotation
             if len(point_set) <= 4:
                 print('Illegal segmentation annotation!')
                 global illegal_anno_cnt
