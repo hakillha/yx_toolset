@@ -17,6 +17,7 @@ PRE_DEFINE_CATEGORIES = {'i': 1, 'p': 2, 'wo': 3, 'rn': 4, 'lo': 5,
 def parse_args():
     parser = argparse.ArgumentParser('Convert FT detection data into COCO format.')
     parser.add_argument('--input_path', default='/media/yingges/Data/201910/FT/FTData/yunxikeji_01_label-20190927', type=str)
+    parser.add_argument('--subfolders', help='Indicates if the input path contains subfolders.',action='store_true')
     parser.add_argument('--label_map_path', type=str)
     parser.add_argument('--train_json_file', default='cocoformat_train_out.json', type=str)
     parser.add_argument('--valid_json_file', default='cocoformat_valid_out.json', type=str)
@@ -35,7 +36,7 @@ def get_categories(in_files):
 
     return {name: i + 1 for i, name in enumerate(classes_names)}
 
-def parse_folder_ft_det(input_path):
+def parse_folder_ft_det(input_path, subfolders):
     """
     Point of having this as a separate interface is that
     we can easily deal with changes of file structure.
@@ -47,12 +48,17 @@ def parse_folder_ft_det(input_path):
         
 
     """
-    folder_list = [item for item in os.listdir(input_path) if os.path.isdir(pj(input_path, item))]
-    img_list = []
-    anno_list = []
-    for folder in folder_list:
-        img_list += glob(pj(input_path, folder, 'images', '*'))
-        anno_list += glob(pj(input_path, folder, 'labels', '*'))
+    if subfolders:
+        folder_list = [item for item in os.listdir(input_path) if os.path.isdir(pj(input_path, item))]
+        img_list = []
+        anno_list = []
+        for folder in folder_list:
+            img_list += glob(pj(input_path, folder, 'images', '*'))
+            anno_list += glob(pj(input_path, folder, 'labels', '*'))
+    else:
+        img_list = glob(pj(input_path, 'images', '*'))
+        anno_list = glob(pj(input_path, 'labels', '*'))
+    # returns a dict where each entry is a list: [abspath_to_img, abspath_to_anno]
     res = {}
     for img in img_list:
         res[os.path.basename(img).split('.')[0]] = [img]
@@ -207,7 +213,7 @@ def convert(in_files, in_files_index, out_file, categories):
 if __name__ == '__main__':
     args = parse_args()
 
-    data_list = parse_folder_ft_det(args.input_path)
+    data_list = parse_folder_ft_det(args.input_path, args.subfolders)
     # if args.label_map_path == None:
     if PRE_DEFINE_CATEGORIES == None:
         categories = get_categories(data_list)
