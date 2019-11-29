@@ -13,7 +13,7 @@ from os.path import join as pj
 from pycocotools.coco import COCO
 from pycocotools.cocoeval import COCOeval
 
-def evaluate(img_folder, annFile, resFile, annType, per_cls_stat=False):
+def evaluate(annFile, resFile, annType, per_cls_stat=False):
     """
         Args: annType has the following types ['segm','bbox','keypoints']
 
@@ -102,15 +102,15 @@ def main():
 
     args = parser.parse_args()
 
-    args.anno_file_path = '/media/yingges/Data/201910/FT/FTData/ft_od1_merged/valid_coco.json'
-    # args.anno_file_path = '/media/yingges/Data/201910/FT/FTData/ft_od1_merged/sample100/viz_output_thres_point5_01.json'
-    args.res_file_path = '/media/yingges/Data/201910/FT/FTData/ft_od1_merged/map_output.json'
-    # args.res_file_path = '/media/yingges/Data/201910/Deploy/Deformable-ConvNets-CPU/DCN/output/rfcn_dcn/voc/resnet_v1_101_voc0712_rfcn_dcn_end2end_ohem/ft_test/results/detections_ft_test_results.json'
+    # args.anno_file_path = '/media/yingges/Data/201910/FT/FTData/ft_od1_merged/other/sample100/sample_ann.json'
+    # args.res_file_path = '/media/yingges/Data/201910/FT/FTData/ft_od1_merged/other/sample100/map_output.json'
+    args.anno_file_path = '/media/yingges/Data/201910/FT/FTData/ft_det_cleanedup/cocoformat_valid_out.json'
+    args.res_file_path = '/media/yingges/Data/201910/FT/FTData/ft_det_cleanedup/map_output.json'
 
     if args.mode == 'viz':
         coco_format_viz(args.img_folder_path, args.anno_file_path)
     if args.mode == 'eval':
-        evaluate(args.img_folder_path, args.anno_file_path, args.res_file_path, args.ann_type, args.per_cls_stat)
+        evaluate(args.anno_file_path, args.res_file_path, args.ann_type, args.per_cls_stat)
 
 if __name__ == '__main__':
     main()

@@ -6,19 +6,27 @@ import json
 import math
 import os
 import random
+import sys
 
-from glob import glob
 from os.path import join as pj
 
-PRE_DEFINE_CATEGORIES = {'i': 1, 'p': 2, 'wo': 3, 'rn': 4, 'lo': 5, 
-                         'tl': 6, 'ro': 7}
+cur_path = os.path.abspath(os.path.dirname(__file__))
+sys.path.insert(0, pj(cur_path, '..', '..', '..', '..'))
+import yx_toolset.python.utils.data_conversion as data_conversion
+
 # PRE_DEFINE_CATEGORIES = None
+# PRE_DEFINE_CATEGORIES = {'i': 1, 'p': 2, 'wo': 3, 'rn': 4, 'lo': 5, 
+#                          'tl': 6, 'ro': 7}
+PRE_DEFINE_CATEGORIES = {'io': 1, 'wo': 2, 'ors': 3, 'p10': 4, 'p11': 5, 
+                         'p26': 6, 'p20': 7, 'p23': 8, 'p19': 9, 'pne': 10, 
+                         'rn': 11, 'ps': 12, 'p5': 13, 'lo': 14, 'tl': 15, 
+                         'pg': 16, 'sc1': 17,'sc0': 18, 'ro': 19, 'pn': 20, 
+                         'po': 21, 'pl': 22, 'pm': 23}
 
 def parse_args():
     parser = argparse.ArgumentParser('Convert FT detection data into COCO format.')
     parser.add_argument('--input_path', default='/media/yingges/Data/201910/FT/FTData/yunxikeji_01_label-20190927', type=str)
     parser.add_argument('--subfolders', help='Indicates if the input path contains subfolders.',action='store_true')
-    parser.add_argument('--label_map_path', type=str)
     parser.add_argument('--train_json_file', default='cocoformat_train_out.json', type=str)
     parser.add_argument('--valid_json_file', default='cocoformat_valid_out.json', type=str)
     parser.add_argument('--valid_ratio', default=0.15, help='The ratio of validation files.', type=float)
@@ -36,37 +44,10 @@ def get_categories(in_files):
 
     return {name: i + 1 for i, name in enumerate(classes_names)}
 
-def parse_folder_ft_det(input_path, subfolders):
-    """
-    Point of having this as a separate interface is that
-    we can easily deal with changes of file structure.
+def find_parent_class(in_cls, orphan=True):
+    if orphan:
+        return in_cls
 
-    Args:
-
-
-    Returns:
-        
-
-    """
-    if subfolders:
-        folder_list = [item for item in os.listdir(input_path) if os.path.isdir(pj(input_path, item))]
-        img_list = []
-        anno_list = []
-        for folder in folder_list:
-            img_list += glob(pj(input_path, folder, 'images', '*'))
-            anno_list += glob(pj(input_path, folder, 'labels', '*'))
-    else:
-        img_list = glob(pj(input_path, 'images', '*'))
-        anno_list = glob(pj(input_path, 'labels', '*'))
-    # returns a dict where each entry is a list: [abspath_to_img, abspath_to_anno]
-    res = {}
-    for img in img_list:
-        res[os.path.basename(img).split('.')[0]] = [img]
-    for anno in anno_list:
-        res[os.path.basename(anno).split('.')[0]].append(anno)
-    return res   
-
-def find_parent_class(in_cls):
     if in_cls.startswith('p'):
         return 'p'
     if in_cls.startswith('i'):
@@ -169,7 +150,7 @@ def write_one_image(json_dict,
 
     return  img_id, anno_id, bad_flag
 
-def convert(in_files, in_files_index, out_file, categories):
+def convert(data_map, data_map_keys, out_file, categories):
     out_json_dict = {'images': [], 'type': 'instances', 'annotations':[], 'categories':[]}
 
     img_id = 1
@@ -177,9 +158,9 @@ def convert(in_files, in_files_index, out_file, categories):
     irre_data_cnt = 0
     invalid_data_cnt = 0
     bad_image_data = 0
-    for index in in_files_index:
-        print('{}/{} finished...'.format(img_id, len(in_files_index)))
-        json_dict = json.load(open(in_files[index][1]))
+    for key in data_map_keys:
+        print('{}/{} finished...'.format(img_id, len(data_map_keys)))
+        json_dict = json.load(open(data_map[key][1]))
         bad_res = detect_bad_data(json_dict, categories)
         if bad_res:
             # print(bad_res)
@@ -190,7 +171,7 @@ def convert(in_files, in_files_index, out_file, categories):
                               out_json_dict, 
                               categories, 
                               anno_id, 
-                              in_files[index][0], 
+                              data_map[key][0], 
                               img_id)
         if ret:
             img_id, anno_id, _ = ret
@@ -213,36 +194,31 @@ def convert(in_files, in_files_index, out_file, categories):
 if __name__ == '__main__':
     args = parse_args()
 
-    data_list = parse_folder_ft_det(args.input_path, args.subfolders)
-    # if args.label_map_path == None:
+    data_map, shuffled_list, train_size = data_conversion.parse_folder_ft_det(args.input_path, args.subfolders, args.valid_ratio)
     if PRE_DEFINE_CATEGORIES == None:
-        categories = get_categories(data_list)
+        categories = get_categories(data_map)
     else:
         categories = PRE_DEFINE_CATEGORIES
-    # print(categories)
-    shuffled_list = data_list.keys()
-    random.shuffle(data_list.keys())
-    train_size = int(math.floor(len(shuffled_list) * (1 - args.valid_ratio)))
 
     irre_data_cnt = 0
     bad_image_data = 0 
     invalid_data_cnt = 0
     if args.valid_ratio == 1:
-        stat = convert(data_list, shuffled_list, args.valid_json_file, categories)
+        stat = convert(data_map, shuffled_list, args.valid_json_file, categories)
         irre_data_cnt += stat[0]
         bad_image_data += stat[1]
         invalid_data_cnt += stat[2]
     elif args.valid_ratio == 0:
-        stat = convert(data_list, shuffled_list, args.train_json_file, categories)
+        stat = convert(data_map, shuffled_list, args.train_json_file, categories)
         irre_data_cnt += stat[0]
         bad_image_data += stat[1]
         invalid_data_cnt += stat[2]
     else:
-        stat = convert(data_list, shuffled_list[:train_size], args.train_json_file, categories)
+        stat = convert(data_map, shuffled_list[:train_size], args.train_json_file, categories)
         irre_data_cnt += stat[0]
         bad_image_data += stat[1]
         invalid_data_cnt += stat[2]
-        stat = convert(data_list, shuffled_list[train_size:], args.valid_json_file, categories)
+        stat = convert(data_map, shuffled_list[train_size:], args.valid_json_file, categories)
         irre_data_cnt += stat[0]
         bad_image_data += stat[1]
         invalid_data_cnt += stat[2]

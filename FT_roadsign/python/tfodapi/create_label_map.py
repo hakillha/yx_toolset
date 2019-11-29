@@ -13,9 +13,13 @@ od_classes = ['io', 'wo', 'ors', 'p10', 'p11',
               'rn', 'ps', 'p5', 'lo', 'tl',
               'pg', 'sc', 'ro', 'pn', 'po',
               'pl', 'pm', 'ph']
+seg_classes = ['roa', 'loa', 'soa', 'sloa', 'sroa',
+			   'ooa', 'cf', 'rg', 'np', 'cross',
+			   'ld','zyfgd','lcfgd','lmj','sfwl',
+			   'sdwl','sfyl','sdyl','dfyl','sl']
 
 file = open('ft_od_label_map.txt', 'w')
-for i, label in enumerate(od_classes):
+for i, label in enumerate(seg_classes):
     line = 'item {\n'
     line += '\tid: ' + str(i + 1) + '\n'
     line += '\tname: "' + label + '"\n}\n'
