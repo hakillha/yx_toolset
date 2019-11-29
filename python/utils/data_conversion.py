@@ -34,8 +34,8 @@ def parse_folder_ft_det(input_path, subfolders, valid_ratio):
     else:
         img_list = glob(pj(input_path, 'images', '*'))
         anno_list = glob(pj(input_path, 'labels', '*'))
-    img_list = [im for im in img_list if im.endswith('jpg')]
-    anno_list = [ann for ann in anno_list if ann.endswith('json')]
+    img_list = [im for im in img_list if im.endswith('.jpg')]
+    anno_list = [ann for ann in anno_list if ann.endswith('.json')]
     # returns a dict where each entry is a list: [abspath_to_img, abspath_to_anno]
     res_dict = {}
     add_item(img_list, res_dict)

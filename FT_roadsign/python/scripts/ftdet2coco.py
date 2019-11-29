@@ -25,10 +25,10 @@ PRE_DEFINE_CATEGORIES = {'io': 1, 'wo': 2, 'ors': 3, 'p10': 4, 'p11': 5,
 
 def parse_args():
     parser = argparse.ArgumentParser('Convert FT detection data into COCO format.')
-    parser.add_argument('--input_path', default='/media/yingges/Data/201910/FT/FTData/yunxikeji_01_label-20190927', type=str)
+    parser.add_argument('--input_path', default='/media/yingges/Data/201910/FT/FTData/ft_det_cleanedup', type=str)
     parser.add_argument('--subfolders', help='Indicates if the input path contains subfolders.',action='store_true')
-    parser.add_argument('--train_json_file', default='cocoformat_train_out.json', type=str)
-    parser.add_argument('--valid_json_file', default='cocoformat_valid_out.json', type=str)
+    parser.add_argument('--train_json_file', default='/media/yingges/Data/201910/FT/FTData/ft_det_cleanedup/cocoformat_train_out.json', type=str)
+    parser.add_argument('--valid_json_file', default='/media/yingges/Data/201910/FT/FTData/ft_det_cleanedup/cocoformat_valid_out.json', type=str)
     parser.add_argument('--valid_ratio', default=0.15, help='The ratio of validation files.', type=float)
     return parser.parse_args()
 
@@ -46,13 +46,18 @@ def get_categories(in_files):
 
 def find_parent_class(in_cls, orphan=True):
     if orphan:
+        if in_cls.startswith('pl'):
+            return 'pl'
+        elif in_cls.startswith('pm'):
+            return 'pm'
+        else:
+            return in_cls
+    else:
+        if in_cls.startswith('p'):
+            return 'p'
+        if in_cls.startswith('i'):
+            return 'i'
         return in_cls
-
-    if in_cls.startswith('p'):
-        return 'p'
-    if in_cls.startswith('i'):
-        return 'i'
-    return in_cls
 
 def detect_bad_data(json_dict, classes_names):
     '''
