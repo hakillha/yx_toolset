@@ -13,6 +13,7 @@ from os.path import join as pj
 cur_path = os.path.abspath(os.path.dirname(__file__))
 sys.path.insert(0, pj(cur_path, '..', '..', '..', '..'))
 import yx_toolset.python.utils.data_conversion as data_conversion
+from yx_toolset.python.utils.data_conversion import find_det_parent_class
 
 # PRE_DEFINE_CATEGORIES = None
 # PRE_DEFINE_CATEGORIES = {'i': 1, 'p': 2, 'wo': 3, 'rn': 4, 'lo': 5, 
@@ -44,21 +45,6 @@ def get_categories(in_files):
 
     return {name: i + 1 for i, name in enumerate(classes_names)}
 
-def find_parent_class(in_cls, orphan=True):
-    if orphan:
-        if in_cls.startswith('pl'):
-            return 'pl'
-        elif in_cls.startswith('pm'):
-            return 'pm'
-        else:
-            return in_cls
-    else:
-        if in_cls.startswith('p'):
-            return 'p'
-        if in_cls.startswith('i'):
-            return 'i'
-        return in_cls
-
 def detect_bad_data(json_dict, classes_names):
     '''
         Returns a warning string if an error is found, otherwise returns None.
@@ -69,7 +55,7 @@ def detect_bad_data(json_dict, classes_names):
         if 'object' in json_dict['outputs'].keys():
             contain_coi = False
             for obj in json_dict['outputs']['object']:
-                if find_parent_class(obj['name']) in classes_names.keys():
+                if find_det_parent_class(obj['name']) in classes_names.keys():
                     contain_coi = True                     
             if not contain_coi:
                 return 'This frame doesn\'t contain classes of interest.'
@@ -114,8 +100,8 @@ def write_one_image(json_dict,
     # print(json.dumps(json_dict, indent=4))
     valid_anno = False
     for anno in json_dict['outputs']['object']:
-        if find_parent_class(anno['name']) in categories.keys() and 'bndbox' in anno.keys():
-            cate_id = categories[find_parent_class(anno['name'])]
+        if find_det_parent_class(anno['name']) in categories.keys() and 'bndbox' in anno.keys():
+            cate_id = categories[find_det_parent_class(anno['name'])]
             anno = anno['bndbox']
             bb = [anno['xmin'], anno['ymin'], anno['xmax'], anno['ymax']]
             if not (bb[0] >= 0 and bb[1] >= 0 and bb[2] < width and bb[3] < height):

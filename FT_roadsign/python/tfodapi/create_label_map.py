@@ -18,7 +18,7 @@ seg_classes = ['roa', 'loa', 'soa', 'sloa', 'sroa',
 			   'ld','zyfgd','lcfgd','lmj','sfwl',
 			   'sdwl','sfyl','sdyl','dfyl','sl']
 
-file = open('ft_od_label_map.txt', 'w')
+file = open('ft_od_label_map.pbtxt', 'w')
 for i, label in enumerate(seg_classes):
     line = 'item {\n'
     line += '\tid: ' + str(i + 1) + '\n'

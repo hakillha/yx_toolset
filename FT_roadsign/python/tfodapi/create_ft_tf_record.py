@@ -2,12 +2,14 @@ import argparse
 import hashlib
 import io
 import json
+import numpy as np
 import os
 import PIL.Image
 import sys
 import tensorflow as tf
 
 import xml.etree.cElementTree as ET
+import pycocotools.mask as maskUtils
 
 from object_detection.utils import dataset_util
 from object_detection.utils import label_map_util
@@ -18,38 +20,28 @@ from os.path import join as pj
 cur_path = os.path.abspath(os.path.dirname(__file__))
 sys.path.insert(0, pj(cur_path, '..', '..', '..', '..'))
 import yx_toolset.python.utils.data_conversion as data_conversion
+from yx_toolset.python.utils.data_conversion import find_det_parent_class
 
 def parse_args():
     parser = argparse.ArgumentParser()
     # set as optional for now
     # better require abs path
-    parser.add_argument('--label_map_path', default='/media/yingges/Data/201910/FT/FTData/yunxikeji-01-2019-10-21/ft_seg_label_map.txt')
-    parser.add_argument('--ft_data_dir', default='/media/yingges/Data/201910/FT/FTData/yunxikeji-01-2019-10-21')
+    parser.add_argument('--label_map_path', default='/home/neut/Desktop/yingges/201911/data/yunxikeji-01-2019-10-21/ft_seg_label_map.txt')
+    parser.add_argument('--ft_data_dir', default='/home/neut/Desktop/yingges/201911/data/yunxikeji-01-2019-10-21')
     parser.add_argument('--subfolders', help='Indicates if the input path contains subfolders.',action='store_true')
     parser.add_argument('--label_source', choices=['og', 'xml'], default='og', help='The source of the label files')
     parser.add_argument('--ann_type', choices=['bbox', 'seg'], default='seg')
-    parser.add_argument('--train_record_path', default='/media/yingges/Data/201910/FT/FTData/yunxikeji-01-2019-10-21/train.record')
-    parser.add_argument('--valid_record_path', default='/media/yingges/Data/201910/FT/FTData/yunxikeji-01-2019-10-21/valid.record')
-    parser.add_argument('--valid_ratio', default=0.15, help='The ratio of validation files.', type=float)
+    parser.add_argument('--train_record_path', default='/home/neut/Desktop/yingges/201911/data/yunxikeji-01-2019-10-21/train.record')
+    parser.add_argument('--valid_record_path', default='/home/neut/Desktop/yingges/201911/data/yunxikeji-01-2019-10-21/valid.record')
+    parser.add_argument('--valid_ratio', default=0.1, help='The ratio of validation files.', type=float)
     return parser.parse_args()
 
-def find_parent_class(child_cls, orphan=True):
-    if orphan:
-        return child_cls
-    if child_cls in ['ph1','ph1.55','ph1.6','ph1.9','ph2',
-                     'ph2,8','ph2.1','ph2.2','ph2.4','ph2.5',
-                     'ph2.8','ph2r','ph3','ph3.2','ph3.5',
-                     'ph3.6','ph4','ph4.2','ph4.5','ph4.8',
-                     'ph5','ph5.5']:
-        return 'ph'
-    if child_cls in ['pl10','pl11','pl14','pl20','pl3',
-                     'pl30','pl30r','pl35','pl40','pl5',
-                     'pl50','pl60','pl70','pl80']:
-        return 'pl'
-    if child_cls in ['pm10','pm20','pm3','pm30','pm40',
-                     'pm49','pm5','pm50','pm55','pm8']:
-        return 'pm'
-    return child_cls
+def check_bimask_validity(mask):
+    num_pixel = 0
+    for p in np.asarray(mask).flatten():
+        if p != 0:
+            num_pixel += 1
+    return num_pixel
 
 def ft_to_tf_example(abs_label_path,
                      abs_img_path,
@@ -63,7 +55,7 @@ def ft_to_tf_example(abs_label_path,
         # check existence of coi
         contain_coi = False
         for obj in json_dict['outputs']['object']:
-            if find_parent_class(obj['name']) in label_map_dict.keys():
+            if find_det_parent_class(obj['name']) in label_map_dict.keys():
                 contain_coi = True
         if not contain_coi:
             return
@@ -71,7 +63,7 @@ def ft_to_tf_example(abs_label_path,
     # Comment out to speed up debug runs
     with tf.gfile.GFile(abs_img_path, 'rb') as fid:
         encoded_jpg = fid.read()
-    # check image format
+    # check image format and validity of the images
     encoded_jpg_io = io.BytesIO(encoded_jpg)
     image = PIL.Image.open(encoded_jpg_io)
     if image.format != 'JPEG':
@@ -90,15 +82,15 @@ def ft_to_tf_example(abs_label_path,
     ymin_list = []
     xmax_list = []
     ymax_list = []
-    classes = []
     classes_text = []
+    classes = []
+    masks = []
     if 'object' in json_dict['outputs'].keys():
         for obj in json_dict['outputs']['object']:
-            bb_class = find_parent_class(obj['name'])
-            if bb_class not in label_map_dict.keys():
-                continue
-
             if ann_type == 'bbox':
+                bb_class = find_det_parent_class(obj['name'])
+                if bb_class not in label_map_dict.keys():
+                    continue
                 xmin = float(obj['bndbox']['xmin'])
                 ymin = float(obj['bndbox']['ymin'])
                 xmax = float(obj['bndbox']['xmax'])
@@ -112,10 +104,15 @@ def ft_to_tf_example(abs_label_path,
                 ymin_list.append(float(ymin) / height)
                 xmax_list.append(float(xmax) / width)
                 ymax_list.append(float(ymax) / height)
+
+                classes_text.append(bb_class.encode('utf8'))
+                classes.append(label_map_dict[bb_class])
             elif ann_type == 'seg':
                 if not 'polygon' in obj.keys(): 
                     continue
-                res = data_conversion.mask_conversion(width, height, obj)
+                if obj['name'] not in label_map_dict.keys():
+                    continue
+                res = data_conversion.ft_mask_conversion(width, height, obj)
                 if res != None:
                     bb, point_set = res
                     xmin = bb[0]; ymin = bb[1]; xmax = bb[2]; ymax = bb[3]
@@ -129,8 +126,19 @@ def ft_to_tf_example(abs_label_path,
                     xmax_list.append(float(xmax) / width)
                     ymax_list.append(float(ymax) / height)
 
-            classes_text.append(bb_class.encode('utf8'))
-            classes.append(label_map_dict[bb_class])
+                    rles = maskUtils.frPyObjects([point_set], height, width)
+                    rle = maskUtils.merge(rles)
+                    mask_np = maskUtils.decode(rle)
+                    # mask_remapped = (mask_np != 2).astype(np.uint8)
+                    mask_remapped = mask_np.astype(np.uint8)
+                    masks.append(mask_remapped)
+                    # for row in mask.tolist():
+                    #     masks += row
+
+                classes_text.append(obj['name'].encode('utf8'))
+                classes.append(label_map_dict[obj['name']])
+
+            
     if len(xmin_list) == 0:
         return
 
@@ -139,8 +147,8 @@ def ft_to_tf_example(abs_label_path,
       'image/width': dataset_util.int64_feature(width),
       'image/filename': dataset_util.bytes_feature(
           os.path.basename(abs_img_path).encode('utf8')),
-      # 'image/source_id': dataset_util.bytes_feature(
-      #     os.path.basename(img_path).encode('utf8')),
+      'image/source_id': dataset_util.bytes_feature(
+          os.path.basename(abs_img_path).encode('utf8')),
       'image/encoded': dataset_util.bytes_feature(encoded_jpg),
       'image/format': dataset_util.bytes_feature('jpeg'.encode('utf8')),
       'image/object/bbox/xmin': dataset_util.float_list_feature(xmin_list),
@@ -150,8 +158,22 @@ def ft_to_tf_example(abs_label_path,
       'image/object/class/text': dataset_util.bytes_list_feature(classes_text),
       'image/object/class/label': dataset_util.int64_list_feature(classes),
     }
+    if ann_type == 'seg':
+        encoded_mask_png_list = []
+        for mask in masks:
+            # res = check_bimask_validity(mask)
+            img = PIL.Image.fromarray(mask)
+            output = io.BytesIO()
+            img.save(output, format='PNG')
+            # encoded_png = output.getvalue()
+            # encoded_png_io = io.BytesIO(encoded_png)
+            # mask = np.asarray(PIL.Image.open(encoded_png_io))
+            # res = check_bimask_validity(mask)
+            encoded_mask_png_list.append(output.getvalue())
+        feature['image/object/mask'] = (
+            dataset_util.bytes_list_feature(encoded_mask_png_list))
 
-    example = tf.train.Example(features=tf.train.Features())
+    example = tf.train.Example(features=tf.train.Features(feature=feature))
     return example
 
 def ftxml_to_ft_example(dirname, 
@@ -167,7 +189,7 @@ def ftxml_to_ft_example(dirname,
         if child.tag == 'object':
             for entry in child:
                 if entry.tag == 'name':
-                    if find_parent_class(entry.text) in label_map_dict.keys():
+                    if find_det_parent_class(entry.text) in label_map_dict.keys():
                         contain_coi = True
     if not contain_coi:
         return
@@ -206,7 +228,7 @@ def ftxml_to_ft_example(dirname,
         if child.tag == 'object':
             for entry in child:
                 if entry.tag == 'name':
-                    bb_class = find_parent_class(entry.text)
+                    bb_class = find_det_parent_class(entry.text)
                     if not bb_class in label_map_dict.keys():
                         skip_bb = True
                         break
@@ -271,10 +293,9 @@ def convert(data_map,
 def main(_):
     args = parse_args()
 
+    label_map_dict = label_map_util.get_label_map_dict(args.label_map_path)
     train_writer = tf.io.TFRecordWriter(args.train_record_path)
     valid_writer = tf.io.TFRecordWriter(args.valid_record_path)
-
-    label_map_dict = label_map_util.get_label_map_dict(args.label_map_path)
 
     if args.label_source == 'og':
         data_map, shuffled_list, train_size = data_conversion.parse_folder_ft_det(args.ft_data_dir, args.subfolders, args.valid_ratio)

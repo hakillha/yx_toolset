@@ -51,7 +51,24 @@ def parse_folder_ft_det(input_path, subfolders, valid_ratio):
 
     return res_dict, shuffled_list, train_size
 
-def mask_conversion(width, height, anno):
+def find_det_parent_class(in_cls, orphan=True):
+    if orphan:
+        if in_cls.startswith('pl'):
+            return 'pl'
+        elif in_cls.startswith('pm'):
+            return 'pm'
+        elif in_cls.startswith('ph'):
+            return 'ph'
+        else:
+            return in_cls
+    else:
+        if in_cls.startswith('p'):
+            return 'p'
+        if in_cls.startswith('i'):
+            return 'i'
+        return in_cls
+
+def ft_mask_conversion(width, height, anno):
     xmin = width
     ymin = height
     xmax = 0
