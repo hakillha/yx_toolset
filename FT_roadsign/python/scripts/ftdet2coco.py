@@ -28,8 +28,8 @@ def parse_args():
     parser = argparse.ArgumentParser('Convert FT detection data into COCO format.')
     parser.add_argument('--input_path', default='/media/yingges/Data/201910/FT/FTData/ft_det_cleanedup', type=str)
     parser.add_argument('--subfolders', help='Indicates if the input path contains subfolders.',action='store_true')
-    parser.add_argument('--train_json_file', default='/media/yingges/Data/201910/FT/FTData/ft_det_cleanedup/cocoformat_train_out.json', type=str)
-    parser.add_argument('--valid_json_file', default='/media/yingges/Data/201910/FT/FTData/ft_det_cleanedup/cocoformat_valid_out.json', type=str)
+    parser.add_argument('--train_json_file', default='/media/yingges/Data/201910/FT/FTData/ft_det_cleanedup/ignore_toosmall/cocoformat_train_out.json', type=str)
+    parser.add_argument('--valid_json_file', default='/media/yingges/Data/201910/FT/FTData/ft_det_cleanedup/ignore_toosmall/cocoformat_valid_out.json', type=str)
     parser.add_argument('--valid_ratio', default=0.15, help='The ratio of validation files.', type=float)
     return parser.parse_args()
 
@@ -72,12 +72,14 @@ def write_one_image(json_dict,
                     anno_id, 
                     image_path, 
                     img_id,
-                    output_irre=False):
+                    output_irre=False,
+                    size_thresh=225):
     """
     Args:
         output_irre: If set to true save irrelavant files instead
     """
     bad_flag = False
+    too_small = 0
     img = cv2.imread(image_path)
     height, width, _ = img.shape
     recorded_width = json_dict['size']['width']
@@ -119,6 +121,9 @@ def write_one_image(json_dict,
             bb = [bb[0], bb[1], bb[2] - bb[0], bb[3] - bb[1]]
             # assert bb[0] >= 0 and bb[1] >= 0 and bb[0] + bb[2] < width and bb[1] + bb[3] < height, 'Annotation out of boundary!'
             area = bb[2] * bb[3]
+            if area < size_thresh:
+                too_small += 1
+                continue
             anno_entry = {
                 'area': area,
                 'bbox': bb,
@@ -139,7 +144,7 @@ def write_one_image(json_dict,
     # Not appending this record if there is no valid anno in it
     out_json_dict['images'].append(img_info)
 
-    return  img_id, anno_id, bad_flag
+    return  img_id, anno_id, bad_flag, too_small
 
 def convert(data_map, data_map_keys, out_file, categories):
     out_json_dict = {'images': [], 'type': 'instances', 'annotations':[], 'categories':[]}
@@ -149,6 +154,7 @@ def convert(data_map, data_map_keys, out_file, categories):
     irre_data_cnt = 0
     invalid_data_cnt = 0
     bad_image_data = 0
+    num_too_small = 0
     for key in data_map_keys:
         print('{}/{} finished...'.format(img_id, len(data_map_keys)))
         json_dict = json.load(open(data_map[key][1]))
@@ -165,8 +171,9 @@ def convert(data_map, data_map_keys, out_file, categories):
                               data_map[key][0], 
                               img_id)
         if ret:
-            img_id, anno_id, _ = ret
+            img_id, anno_id, _, too_small = ret
             if ret[2]: bad_image_data += 1
+            num_too_small += too_small
         else:
             irre_data_cnt += 1
 
@@ -179,6 +186,8 @@ def convert(data_map, data_map_keys, out_file, categories):
     out_f = open(out_file, 'w')
     out_f.write(json.dumps(out_json_dict))
     out_f.close()
+
+    print('Num of anns that is too small: {}'.format(num_too_small))
 
     return irre_data_cnt, bad_image_data, invalid_data_cnt
 
