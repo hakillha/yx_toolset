@@ -108,10 +108,10 @@ def main():
 
     # args.anno_file_path = '/media/yingges/Data/201910/FT/FTData/ft_od1_merged/other/sample100/sample_ann.json'
     # args.res_file_path = '/media/yingges/Data/201910/FT/FTData/ft_od1_merged/other/sample100/map_output.json'
-    args.anno_file_path = '/media/yingges/Data/201910/FT/FTData/ft_det_cleanedup/cocoformat_valid_out.json'
-    args.res_file_path = '/media/yingges/Data/201910/FT/FTData/ft_det_cleanedup/map_output_1130.json'
-    # args.anno_file_path = '/media/yingges/Data/201910/FT/FTData/ft_det_cleanedup/ignore_toosmall/11_30/valid.json'
-    # args.res_file_path = '/media/yingges/Data/201910/FT/FTData/ft_det_cleanedup/ignore_toosmall/11_30/map_output.json'
+    # args.anno_file_path = '/media/yingges/Data/201910/FT/FTData/ft_det_cleanedup/cocoformat_valid_out.json'
+    # args.res_file_path = '/media/yingges/Data/201910/FT/FTData/ft_det_cleanedup/map_output_1130.json'
+    args.anno_file_path = '/media/yingges/Data/201910/FT/FTData/ft_det_cleanedup/ignore_toosmall/11_30/valid.json'
+    args.res_file_path = '/media/yingges/Data/201910/FT/FTData/ft_det_cleanedup/ignore_toosmall/11_30/epoch13_output.json'
 
     if args.mode == 'viz':
         coco_format_viz(args.img_folder_path, args.anno_file_path)
