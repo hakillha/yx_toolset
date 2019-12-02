@@ -13,12 +13,16 @@ import re
 from os.path import join as pj
 
 # PRE_DEFINE_CATEGORIES = None
-PRE_DEFINE_CATEGORIES = {'roa': 1, 'loa': 2, 'soa': 3, 'sloa': 4, 'sroa': 5,
-                         'ooa': 6, 'cf': 7, 'rg': 8, 'np': 9, 'cross': 10,
-                         'ld': 11,'zyfgd': 12,'lcfgd': 13,'lmj': 14,'sfwl': 15,
-                         'sdwl': 16,'sfyl': 17,'sdyl': 18,'dfyl': 19,'sl': 20}
 # PRE_DEFINE_CATEGORIES = {'roa': 1, 'loa': 2, 'soa': 3, 'sloa': 4, 'sroa': 5,
 #                          'ooa': 6, 'cf': 7, 'rg': 8, 'np': 9, 'cross': 10}
+# PRE_DEFINE_CATEGORIES = {'roa': 1, 'loa': 2, 'soa': 3, 'sloa': 4, 'sroa': 5,
+#                          'ooa': 6, 'cf': 7, 'rg': 8, 'np': 9, 'cross': 10,
+#                          'ld': 11,'zyfgd': 12,'lcfgd': 13,'lmj': 14,'sfwl': 15,
+#                          'sdwl': 16,'sfyl': 17,'sdyl': 18,'dfyl': 19,'sl': 20}
+PRE_DEFINE_CATEGORIES = {'roa': 1, 'loa': 2, 'soa': 3, 'sloa': 4, 'sroa': 5,
+                         'yjg': 6, 'cf': 7, 'rg': 8, 'np': 9, 'cross': 10,
+                         'ld': 11,'zyfgd': 12,'lcfgd': 13,'lmj': 14,'sfwl': 15,
+                         'sdwl': 16,'sfyl': 17,'sdyl': 18,'dfyl': 19,'sl': 20}
 broken_f_cnt = 0
 illegal_anno_cnt = 0
 
@@ -180,9 +184,9 @@ if __name__ == '__main__':
 
     cur_file_path = os.path.abspath(os.path.dirname(__file__))
     parser = argparse.ArgumentParser('')
-    parser.add_argument('--ft_dir', default=pj(cur_file_path, '../../yunxikeji-01-2019-10-21/'), type=str)
-    parser.add_argument('--train_json_file', default='cocoformat_train_out_1.json', type=str)
-    parser.add_argument('--valid_json_file', default='cocoformat_valid_out_1.json', type=str)
+    parser.add_argument('--ft_dir', default='/home/neut/Desktop/yingges/201911/data/yunxikeji-01-2019-10-21', type=str)
+    parser.add_argument('--train_json_file', default='/home/neut/Desktop/yingges/201911/data/yunxikeji-01-2019-10-21/train.json', type=str)
+    parser.add_argument('--valid_json_file', default='/home/neut/Desktop/yingges/201911/data/yunxikeji-01-2019-10-21/valid.json', type=str)
     parser.add_argument('--valid_ratio', default=1, type=float)
     args = parser.parse_args()
 
