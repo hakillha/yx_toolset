@@ -4,32 +4,30 @@ import cv2
 
 # Take care! For automatic data generation, we need to write another script contains some terminal commands 99... 
 
-json_add = "/Users/sunrongda/Downloads/data/annotations.json"    # the address of annotations.json of tt100k
-label_add = "/Users/sunrongda/Downloads/data/"            # the label address of the train/test/other set
+json_add = "/media/yingges/Data/Datasets/TT100K_TS/data/annotations.json"    # the address of annotations.json of tt100k
+label_add = "/media/yingges/Data/Datasets/TT100K_TS/data/"            # the label address of the train/test/other set
 mode_list = ["train/", "test/", "other/"]
-json_save_path = "/Users/sunrongda/Downloads/test/"
-new_jpg_save_path = "/Users/sunrongda/Downloads/jpg/"
+json_save_path = "/home/yingges/Downloads/tt100kjson/"
+new_jpg_save_path = "/home/yingges/Downloads/tt100kjpg/"
 
 # write_object_txt function works to extract necesaary infos from 
 def write_object_txt(json_add = json_add, label_add = label_add, mode_list = mode_list):
 	tt100k_json_file = json.loads(open(json_add).read())  # load all the contexts of tt100k annos.
 	types_list = tt100k_json_file["types"]  # all traffic-sign types in tt100k dataset
-
+	index = 0
 	for mode in mode_list:
 
 		ids_txt = open(label_add + mode.split("/")[0] + "_ids.txt", 'r').readlines()
-		print
-		"the length of the {}_ids.txt is {}".format(mode, len(ids_txt))
-		index = 0
+		print "the length of the {}_ids.txt is {}".format(mode, len(ids_txt))
+		
 		for item in ids_txt:
-			out_json_dict = {'path': "", "outputs": {"object": []}, "time_labeled": 1574423089041, "labeled": "true",
-							 "size": {"width": 2080, "height": 2080, "depth": 3}}
+			out_json_dict = {"path": "", "outputs": {"object": []}, "time_labeled": 1574423089041, "labeled": "true",
+							 "size": {"width": 2048, "height": 2048, "depth": 3}}
 			temp = tt100k_json_file["imgs"][
 				str(item).rstrip('\n')]  # Take care. There the image_id should be str(numbers).
-			#print(temp)
+			print(index)
 			temp_path = temp["path"]
-			out_json_dict['path'] = temp_path
-			#print(temp_path)
+			out_json_dict['path'] = str(index)+".jpg"			#print(temp_path)
 			temp_objects = temp["objects"]  # every image may contain several traffic-sign objects...
 			#print(temp_objects)
 			object_id = 0
@@ -52,7 +50,7 @@ def write_object_txt(json_add = json_add, label_add = label_add, mode_list = mod
 					out_file.write(json.dumps(out_json_dict))
 					out_file.close()
 
-		print(index)
+	print(index)
 
 
 

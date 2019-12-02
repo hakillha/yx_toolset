@@ -26,10 +26,10 @@ PRE_DEFINE_CATEGORIES = {'io': 1, 'wo': 2, 'ors': 3, 'p10': 4, 'p11': 5,
 
 def parse_args():
     parser = argparse.ArgumentParser('Convert FT detection data into COCO format.')
-    parser.add_argument('--input_path', default='/media/yingges/Data/201910/FT/FTData/ft_det_cleanedup', type=str)
+    parser.add_argument('--input_path', default='/home/yingges/Downloads/crop', type=str)
     parser.add_argument('--subfolders', help='Indicates if the input path contains subfolders.',action='store_true')
-    parser.add_argument('--train_json_file', default='/media/yingges/Data/201910/FT/FTData/ft_det_cleanedup/ignore_toosmall/cocoformat_train_out.json', type=str)
-    parser.add_argument('--valid_json_file', default='/media/yingges/Data/201910/FT/FTData/ft_det_cleanedup/ignore_toosmall/cocoformat_valid_out.json', type=str)
+    parser.add_argument('--train_json_file', default='/home/yingges/Downloads/crop/train.json', type=str)
+    parser.add_argument('--valid_json_file', default='/home/yingges/Downloads/crop/valid.json', type=str)
     parser.add_argument('--valid_ratio', default=0.15, help='The ratio of validation files.', type=float)
     return parser.parse_args()
 
@@ -72,6 +72,7 @@ def write_one_image(json_dict,
                     anno_id, 
                     image_path, 
                     img_id,
+                    set_type,
                     output_irre=False,
                     size_thresh=225):
     """
@@ -105,7 +106,7 @@ def write_one_image(json_dict,
         if find_det_parent_class(anno['name']) in categories.keys() and 'bndbox' in anno.keys():
             cate_id = categories[find_det_parent_class(anno['name'])]
             anno = anno['bndbox']
-            bb = [anno['xmin'], anno['ymin'], anno['xmax'], anno['ymax']]
+            bb = [int(anno['xmin']), int(anno['ymin']), int(anno['xmax']), int(anno['ymax'])]
             if not (bb[0] >= 0 and bb[1] >= 0 and bb[2] < width and bb[3] < height):
                 # print('Annotation out of boundary!')
                 # print('[xmin, ymin, width, height]: ' + str(bb))
@@ -121,7 +122,7 @@ def write_one_image(json_dict,
             bb = [bb[0], bb[1], bb[2] - bb[0], bb[3] - bb[1]]
             # assert bb[0] >= 0 and bb[1] >= 0 and bb[0] + bb[2] < width and bb[1] + bb[3] < height, 'Annotation out of boundary!'
             area = bb[2] * bb[3]
-            if area < size_thresh:
+            if set_type == 'valid' and area < size_thresh:
                 too_small += 1
                 continue
             anno_entry = {
@@ -146,7 +147,7 @@ def write_one_image(json_dict,
 
     return  img_id, anno_id, bad_flag, too_small
 
-def convert(data_map, data_map_keys, out_file, categories):
+def convert(data_map, data_map_keys, out_file, categories, set_type):
     out_json_dict = {'images': [], 'type': 'instances', 'annotations':[], 'categories':[]}
 
     img_id = 1
@@ -169,7 +170,8 @@ def convert(data_map, data_map_keys, out_file, categories):
                               categories, 
                               anno_id, 
                               data_map[key][0], 
-                              img_id)
+                              img_id,
+                              set_type)
         if ret:
             img_id, anno_id, _, too_small = ret
             if ret[2]: bad_image_data += 1
@@ -204,21 +206,21 @@ if __name__ == '__main__':
     bad_image_data = 0 
     invalid_data_cnt = 0
     if args.valid_ratio == 1:
-        stat = convert(data_map, shuffled_list, args.valid_json_file, categories)
+        stat = convert(data_map, shuffled_list, args.valid_json_file, categories, 'valid')
         irre_data_cnt += stat[0]
         bad_image_data += stat[1]
         invalid_data_cnt += stat[2]
     elif args.valid_ratio == 0:
-        stat = convert(data_map, shuffled_list, args.train_json_file, categories)
+        stat = convert(data_map, shuffled_list, args.train_json_file, categories, 'train')
         irre_data_cnt += stat[0]
         bad_image_data += stat[1]
         invalid_data_cnt += stat[2]
     else:
-        stat = convert(data_map, shuffled_list[:train_size], args.train_json_file, categories)
+        stat = convert(data_map, shuffled_list[:train_size], args.train_json_file, categories, 'train')
         irre_data_cnt += stat[0]
         bad_image_data += stat[1]
         invalid_data_cnt += stat[2]
-        stat = convert(data_map, shuffled_list[train_size:], args.valid_json_file, categories)
+        stat = convert(data_map, shuffled_list[train_size:], args.valid_json_file, categories, 'valid')
         irre_data_cnt += stat[0]
         bad_image_data += stat[1]
         invalid_data_cnt += stat[2]

@@ -5,11 +5,11 @@ import numpy as np
 import copy, cv2
 
 def save_to_jsons(save_path, im_height, im_width, objects_axis, label_name):
-    out_json_dict = {'path': "", "outputs": {"object": []}, "time_labeled": 1574423089041, "labeled": "true",
+    out_json_dict = {"path": "", "outputs": {"object": []}, "time_labeled": 1574423089041, "labeled": "true",
                      "size": {"width": 0, "height": 0, "depth": 3}}
     out_json_dict["size"]["width"] = im_width
     out_json_dict["size"]["height"] = im_height
-    out_json_dict['path'] = save_path
+    out_json_dict["path"] = save_path
     object_num = len(objects_axis)
     for i in range(object_num):
         object_dict = {"name": "", "bndbox": {"xmin": 0, "ymin": 0, "xmax": 0, "ymax": 0}}
@@ -17,10 +17,11 @@ def save_to_jsons(save_path, im_height, im_width, objects_axis, label_name):
         object_dict["bndbox"]["xmin"], object_dict["bndbox"]["ymin"], object_dict["bndbox"]["xmax"], object_dict["bndbox"]["ymax"] \
             = str((objects_axis[i][0])), str((objects_axis[i][1])), str((objects_axis[i][2])), str((objects_axis[i][3]))
         out_json_dict["outputs"]["object"].append(object_dict)
-    print(out_json_dict)
+    #print(out_json_dict)
     out_file = open(save_path, 'w')
     out_file.write(json.dumps(out_json_dict))
     out_file.close()
+
 def clip_image(file_idx, image, boxes_all, width, height):
     if len(boxes_all) > 0:
         shape = image.shape
@@ -66,7 +67,12 @@ def clip_image(file_idx, image, boxes_all, width, height):
                         cv2.imwrite(img, subImage)
 
 
-class_list = ["sc1","ors","i1", "i10", "i11", "i12", "i13", "i14", "i15", "i2", "i3", "i4",
+
+class_list = ['io', 'wo', 'ors', 'p10', 'p11', 
+                         'p26', 'p20', 'p23', 'p19', 'pne', 
+                         'rn', 'ps', 'p5', 'lo', 'tl', 
+                         'pg',  'ro', 'pn','ph1.9','pw1.85','pm49','sc','pa','pw','pl30r','pl11','pr5','ph2r','pm3','ph2,8','pr15','il60 ','po20',
+                         'po', 'pl', 'pm','bak','ph1','pa20','ph1.55','ph','sc0',"sc1","ors","i1", "i10", "i11", "i12", "i13", "i14", "i15", "i2", "i3", "i4",
               "i5", "il100", "il110", "il50", "il60", "il70", "il80", "il90", "io", "ip", "p1", "p10", "p11", "p12", "p13",
               "p14", "p15", "p16", "p17", "p18", "p19", "p2", "p20", "p21", "p22", "p23", "p24", "p25", "p26", "p27", "p28", "p3",
               "p4", "p5", "p6", "p7", "p8", "p9", "pa10", "pa12", "pa13", "pa14", "pa8", "pb", "pc", "pg", "ph1.5", "ph2", "ph2.1",
@@ -79,10 +85,16 @@ class_list = ["sc1","ors","i1", "i10", "i11", "i12", "i13", "i14", "i15", "i2", 
               "w36", "w39", "w4", "w40", "w51", "w52", "w53", "w54", "w6", "w61", "w64", "w65", "w67", "w7", "w9", "pax", "pd", "pe", "phx", "plx", "pmx", "pnl", "prx", "pwx", "w11",
               "w14", "w15", "w17", "w19", "w2", "w23", "w25", "w26", "w27", "pl0", "pl4", "pl3", "pm2.5", "ph4.4", "pn40", "ph3.3", "ph2.6"]
 
+'''class_list = ['io', 'wo', 'ors', 'p10', 'p11', 
+                         'p26', 'p20', 'p23', 'p19', 'pne', 
+                         'rn', 'ps', 'p5', 'lo', 'tl', 
+                         'pg',  'ro', 'pn', 
+                         'po', 'pl', 'pm']
+'''
 
-raw_label_dir = '/media/yingges/Data/Datasets/TT100K_TS/data/'
-raw_images_dir = '/media/yingges/Data/Datasets/TT100K_TS/data/train/'
-save_dir = '/media/yingges/Data/Datasets/TT100K_TS/data/crop/'
+raw_label_dir = '/home/yingges/Downloads/tt100kjson/'
+raw_images_dir = '/home/yingges/Downloads/tt100kjpg/'
+save_dir = '/home/yingges/Downloads/crop/'
 
 
 images = [i for i in os.listdir(raw_images_dir) if 'jpg' in i]
@@ -95,7 +107,7 @@ min_length = 1e10
 max_length = 1
 
 for idx, jsons in enumerate(labels):
-    #print(idx, 'read json', jsons)
+    print(idx, 'read json', jsons)
     #print(os.path.join(raw_label_dir, jsons))
     json_file = json.loads(open(os.path.join(raw_label_dir, jsons)).read())
     outputs = json_file["outputs"]["object"]
@@ -104,9 +116,10 @@ for idx, jsons in enumerate(labels):
         #print(object_)
         if object_["name"] not in class_list:
             print('warning found a new label :', object_["name"])
+            #continue
             exit()
         box.append([int(object_["bndbox"]["xmin"]), int(object_["bndbox"]["ymin"]), int(object_["bndbox"]["xmax"]), int(object_["bndbox"]["ymax"])]+ [class_list.index(object_["name"])])
 
     img_data = cv2.imread(os.path.join(raw_images_dir, jsons.replace('json', 'jpg')))
 
-    clip_image(jsons.strip('.json'), img_data, np.array(box), 600, 600)
+    clip_image(jsons.strip('.json'), img_data, np.array(box), 600, 1000)
