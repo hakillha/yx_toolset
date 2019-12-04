@@ -85,14 +85,16 @@ def coco_format_viz(img_folder, annFile):
     catIds = coco.getCatIds()
     imgIds = coco.getImgIds()
 
-    for imgId in imgIds:
+    for imgId in random.sample(imgIds, 50):
         img = coco.loadImgs(imgId)[0]
         I = io.imread(pj(img_folder, img['file_name']))
 
         plt.imshow(I); plt.axis('off')
         annIds = coco.getAnnIds(imgIds=img['id'], catIds=catIds, iscrowd=None)
         anns = coco.loadAnns(annIds)
+        print('Height: {}\n Width: {}\n'.format(img['height'], img['width']))
         showBndbox(coco, anns)
+        plt.title(img['file_name'])
         plt.show()
 
 def main():
@@ -110,8 +112,12 @@ def main():
     # args.res_file_path = '/media/yingges/Data/201910/FT/FTData/ft_od1_merged/other/sample100/map_output.json'
     # args.anno_file_path = '/media/yingges/Data/201910/FT/FTData/ft_det_cleanedup/cocoformat_valid_out.json'
     # args.res_file_path = '/media/yingges/Data/201910/FT/FTData/ft_det_cleanedup/map_output_1130.json'
-    args.anno_file_path = '/media/yingges/Data/201910/FT/FTData/ft_det_cleanedup/ignore_toosmall/11_30/valid.json'
-    args.res_file_path = '/media/yingges/Data/201910/FT/FTData/ft_det_cleanedup/ignore_toosmall/11_30/epoch21_output.json'
+    # args.anno_file_path = '/media/yingges/Data/201910/FT/FTData/ft_det_cleanedup/ignore_toosmall/11_30/valid.json'
+    # args.res_file_path = '/media/yingges/Data/201910/FT/FTData/ft_det_cleanedup/ignore_toosmall/11_30/augmented_output.json'
+    # args.anno_file_path = '/home/yingges/Downloads/crop/valid.json'
+    # args.res_file_path = '/home/yingges/Downloads/crop/output.json'
+    args.anno_file_path = '/home/yingges/Downloads/crop/train.json'
+    args.img_folder_path = '/home/yingges/Downloads/crop/images'
 
     if args.mode == 'viz':
         coco_format_viz(args.img_folder_path, args.anno_file_path)
