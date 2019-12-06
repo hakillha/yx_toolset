@@ -1,4 +1,6 @@
 import argparse
+import copy
+import json
 import matplotlib.pyplot as plt
 import numpy as np
 import random
@@ -19,8 +21,8 @@ def evaluate(annFile, resFile, annType, per_cls_stat=False):
 
     """
     res = []
-    cocoGt=COCO(annFile)
-    cocoDt=cocoGt.loadRes(resFile)
+    cocoGt = COCO(annFile)
+    cocoDt = cocoGt.loadRes(resFile)
     cocoEval = COCOeval(cocoGt,cocoDt,annType)
     cocoEval.evaluate()
     cocoEval.accumulate()
@@ -39,6 +41,69 @@ def evaluate(annFile, resFile, annType, per_cls_stat=False):
     cats = [{'name': 'Overall'}] + cats
     for idx, cls_ in enumerate(cats):
         print('{} mAP@.5: {:0.3f}'.format(cats[idx]['name'], res[idx]))
+
+def evaluate_curve(annFile, resFile, annType, score_thr=0.2, split=10):
+    cocoGt = COCO(annFile)
+    cocoDt = cocoGt.loadRes(resFile)
+    anns = cocoDt.dataset['annotations']
+    anns = [ann for ann in anns if ann['score'] >= score_thr]
+
+    # cocoDt = cocoGt.loadRes(anns)
+    # cocoEval = COCOeval(cocoGt,cocoDt,annType)
+    # cocoEval.evaluate()
+    # cocoEval.accumulate()
+    # cocoEval.summarize()
+    # for i in range(0, 100, 2):
+    #     pr = np.mean(cocoEval.eval['precision'][0,i,:,0,2])
+    #     print('ACC: {:.3f}, RECALL: {:.3f}'.format(pr, (i + 1) / 100.0))
+    # prs = [np.mean(cocoEval.eval['precision'][0,i,:,0,2]) for i in range(0, 101)]
+    # x = np.arange(0.0, 1.01, 0.01)
+    # plt.xlabel('recall')
+    # plt.ylabel('precision')
+    # plt.xlim(0, 1.0)
+    # plt.ylim(0, 1.01)
+    # plt.grid(True)
+    # plt.plot(x, prs)
+    # plt.show()
+
+    anns = sorted(anns, key=lambda ann: -ann['score'])
+    n = int(len(anns) / split) # chunk length
+    anns_chunks = [anns[0:i + n] for i in range(0, len(anns), n)]
+    num_gt = len(cocoGt.anns)
+    for chunk in anns_chunks:
+        tmp_json_dict = {'images': copy.deepcopy(cocoGt.dataset['images']),
+                         'categories':  copy.deepcopy(cocoGt.dataset['categories']),
+                         'annotations': chunk}
+        with open('tmp.json', 'w') as outfile:
+            json.dump(tmp_json_dict, outfile)
+        cocoDt = COCO('tmp.json')
+        cocoDt.dataset['annotations'] = chunk
+        cocoDt.createIndex()
+        cocoEval = COCOeval(cocoGt,cocoDt,annType)
+        cocoEval.evaluate()
+
+        num_hit = 0
+        K0 = len(cocoEval.params.catIds)
+        A0 = len(cocoEval._paramsEval.areaRng)
+        I0 = len(cocoEval._paramsEval.imgIds)
+        res_list = [cocoEval.evalImgs[k * A0 * I0 + a * I0 + i] 
+                    for i in range(0, I0)
+                    for a in [1, 2, 3]
+                    for k in range(0, K0)]
+        for res in cocoEval.evalImgs:
+            if res is not None:
+                num_hit += np.count_nonzero(res['dtMatches'][0]) # .5 IOU hits
+        print('ACC: {:.3f}, RECALL: {:.3f}'.format(num_hit / len(chunk), num_hit / num_gt))
+
+        # E = [e for e in cocoEval.evalImgs if not e is None]
+        # dtScores = np.concatenate([e['dtScores'][0:100] for e in E])
+        # inds = np.argsort(-dtScores, kind='mergesort')
+        # dtm  = np.concatenate([e['dtMatches'][:,0:100] for e in E], axis=1)[:,inds]
+        # dtIg = np.concatenate([e['dtIgnore'][:,0:100]  for e in E], axis=1)[:,inds]
+        # tps = np.logical_and(dtm, np.logical_not(dtIg))
+        # tp_sum = np.cumsum(tps, axis=1).astype(dtype=np.float)
+        # tp = tp_sum[0]
+        # print('ACC: {:.3f}, RECALL: {:.3f}'.format(tp / len(chunk), tp / num_gt))
 
 def showBndbox(coco, anns):
     """
@@ -105,24 +170,22 @@ def main():
     parser.add_argument('--img_folder_path', default='/media/yingges/Data/Datasets/COCO/val2017',type=str)
     parser.add_argument('--res_file_path', default='/media/yingges/Data/201910/yolact/yolact/results/mask_detections.json')
     parser.add_argument('--per_cls_stat', action='store_true')
+    parser.add_argument('--map_curve', default=True, action='store_true')
+    parser.add_argument('--score_thr', default=0.2, type=float)
 
     args = parser.parse_args()
 
-    # args.anno_file_path = '/media/yingges/Data/201910/FT/FTData/ft_od1_merged/other/sample100/sample_ann.json'
-    # args.res_file_path = '/media/yingges/Data/201910/FT/FTData/ft_od1_merged/other/sample100/map_output.json'
-    # args.anno_file_path = '/media/yingges/Data/201910/FT/FTData/ft_det_cleanedup/cocoformat_valid_out.json'
-    # args.res_file_path = '/media/yingges/Data/201910/FT/FTData/ft_det_cleanedup/map_output_1130.json'
-    # args.anno_file_path = '/media/yingges/Data/201910/FT/FTData/ft_det_cleanedup/ignore_toosmall/11_30/valid.json'
-    # args.res_file_path = '/media/yingges/Data/201910/FT/FTData/ft_det_cleanedup/ignore_toosmall/11_30/augmented_output.json'
-    # args.anno_file_path = '/home/yingges/Downloads/crop/valid.json'
-    # args.res_file_path = '/home/yingges/Downloads/crop/output.json'
-    args.anno_file_path = '/home/yingges/Downloads/crop/train.json'
-    args.img_folder_path = '/home/yingges/Downloads/crop/images'
+    # args.img_folder_path = '/home/yingges/Downloads/crop/images'
+    args.anno_file_path = '/home/yingges/Desktop/yingges/experiments/data/ft_det_cleanedup/ignore_toosmall/11_30/valid.json'
+    args.res_file_path = '/home/yingges/Desktop/yingges/experiments/data/ft_det_cleanedup/ignore_toosmall/11_30/epoch21_output.json'
 
     if args.mode == 'viz':
         coco_format_viz(args.img_folder_path, args.anno_file_path)
     if args.mode == 'eval':
-        evaluate(args.anno_file_path, args.res_file_path, args.ann_type, args.per_cls_stat)
+        if args.map_curve:
+            evaluate_curve(args.anno_file_path, args.res_file_path, args.ann_type, args.score_thr)
+        else:
+            evaluate(args.anno_file_path, args.res_file_path, args.ann_type, args.per_cls_stat)
 
 if __name__ == '__main__':
     main()
