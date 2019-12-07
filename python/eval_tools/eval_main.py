@@ -90,9 +90,10 @@ def evaluate_curve(annFile, resFile, annType, score_thr=0.2, split=10):
                     for i in range(0, I0)
                     for a in [1, 2, 3]
                     for k in range(0, K0)]
-        for res in cocoEval.evalImgs:
-            if res is not None:
-                num_hit += np.count_nonzero(res['dtMatches'][0]) # .5 IOU hits
+        res_list = [res for res in res_list if not res is None]
+        for res in res_list:
+            num_hit += np.count_nonzero(res['gtMatches'][0]) # .5 IOU hits
+        num_hit /= 3
         print('ACC: {:.3f}, RECALL: {:.3f}'.format(num_hit / len(chunk), num_hit / num_gt))
 
         # E = [e for e in cocoEval.evalImgs if not e is None]
@@ -171,7 +172,7 @@ def main():
     parser.add_argument('--res_file_path', default='/media/yingges/Data/201910/yolact/yolact/results/mask_detections.json')
     parser.add_argument('--per_cls_stat', action='store_true')
     parser.add_argument('--map_curve', default=True, action='store_true')
-    parser.add_argument('--score_thr', default=0.2, type=float)
+    parser.add_argument('--score_thr', default=0, type=float)
 
     args = parser.parse_args()
 
