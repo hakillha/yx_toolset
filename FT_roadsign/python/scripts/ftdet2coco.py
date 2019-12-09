@@ -16,8 +16,8 @@ import yx_toolset.python.utils.data_conversion as data_conversion
 from yx_toolset.python.utils.data_conversion import find_det_parent_class
 
 # PRE_DEFINE_CATEGORIES = None
-# PRE_DEFINE_CATEGORIES = {'i': 1, 'p': 2, 'wo': 3, 'rn': 4, 'lo': 5, 
-#                          'tl': 6, 'ro': 7}
+PRE_DEFINE_CATEGORIES_GENERIC = {'i': 1, 'p': 2, 'wo': 3, 'rn': 4, 'lo': 5, 
+                                 'tl': 6, 'ro': 7}
 PRE_DEFINE_CATEGORIES = {'io': 1, 'wo': 2, 'ors': 3, 'p10': 4, 'p11': 5, 
                          'p26': 6, 'p20': 7, 'p23': 8, 'p19': 9, 'pne': 10, 
                          'rn': 11, 'ps': 12, 'p5': 13, 'lo': 14, 'tl': 15, 
@@ -36,7 +36,7 @@ def get_categories(in_files):
 
     return {name: i + 1 for i, name in enumerate(classes_names)}
 
-def detect_bad_data(json_dict, classes_names):
+def detect_bad_data(json_dict, classes_names, finegrained_cls):
     '''
         Returns a warning string if an error is found, otherwise returns None.
     '''
@@ -46,7 +46,7 @@ def detect_bad_data(json_dict, classes_names):
         if 'object' in json_dict['outputs'].keys():
             contain_coi = False
             for obj in json_dict['outputs']['object']:
-                if find_det_parent_class(obj['name']) in classes_names.keys():
+                if find_det_parent_class(obj['name'], finegrained_cls) in classes_names.keys():
                     contain_coi = True                     
             if not contain_coi:
                 return 'This frame doesn\'t contain classes of interest.'
@@ -65,6 +65,7 @@ def write_one_image(json_dict,
                     img_id,
                     set_type,
                     size_thresh,
+                    finegrained_cls,
                     output_irre=False):
     """
     Args:
@@ -94,8 +95,8 @@ def write_one_image(json_dict,
     # print(json.dumps(json_dict, indent=4))
     valid_anno = False
     for anno in json_dict['outputs']['object']:
-        if find_det_parent_class(anno['name']) in categories.keys() and 'bndbox' in anno.keys():
-            cate_id = categories[find_det_parent_class(anno['name'])]
+        if find_det_parent_class(anno['name'], finegrained_cls) in categories.keys() and 'bndbox' in anno.keys():
+            cate_id = categories[find_det_parent_class(anno['name'], finegrained_cls)]
             anno = anno['bndbox']
             bb = [int(anno['xmin']), int(anno['ymin']), int(anno['xmax']), int(anno['ymax'])]
             if not (bb[0] >= 0 and bb[1] >= 0 and bb[2] < width and bb[3] < height):
@@ -138,7 +139,7 @@ def write_one_image(json_dict,
 
     return  img_id, anno_id, bad_flag, too_small
 
-def convert(data_map, data_map_keys, out_file, categories, set_type, valid_size_thr=0):
+def convert(data_map, data_map_keys, out_file, categories, set_type, finegrained_cls, valid_size_thr=0):
     out_json_dict = {'images': [], 'type': 'instances', 'annotations':[], 'categories':[]}
 
     img_id = 1
@@ -150,7 +151,7 @@ def convert(data_map, data_map_keys, out_file, categories, set_type, valid_size_
     for key in data_map_keys:
         print('{}/{} finished...'.format(img_id, len(data_map_keys)))
         json_dict = json.load(open(data_map[key][1]))
-        bad_res = detect_bad_data(json_dict, categories)
+        bad_res = detect_bad_data(json_dict, categories, finegrained_cls)
         if bad_res:
             # print(bad_res)
             invalid_data_cnt += 1
@@ -163,7 +164,8 @@ def convert(data_map, data_map_keys, out_file, categories, set_type, valid_size_
                               data_map[key][0], 
                               img_id,
                               set_type,
-                              valid_size_thr)
+                              valid_size_thr,
+                              finegrained_cls)
         if ret:
             img_id, anno_id, _, too_small = ret
             if ret[2]: bad_image_data += 1
@@ -187,12 +189,13 @@ def convert(data_map, data_map_keys, out_file, categories, set_type, valid_size_
 
 def parse_args():
     parser = argparse.ArgumentParser('Convert FT detection data into COCO format.')
-    parser.add_argument('--input_path', default='/media/yingges/Data/201910/FT/FTData/ft_det_cleanedup/ignore_toosmall/11_30/og_files', type=str)
+    parser.add_argument('--input_path', default='/media/yingges/Data/201910/FT/FTData/ft_det_cleanedup/ignore_toosmall/11_30/', type=str)
     parser.add_argument('--subfolders', help='Indicates if the input path contains subfolders.',action='store_true')
     parser.add_argument('--train_json_file', default='/home/yingges/Downloads/crop/train.json', type=str)
-    parser.add_argument('--valid_json_file', default='/media/yingges/Data/201910/FT/FTData/ft_det_cleanedup/ignore_toosmall/11_30/og_files/valid.json', type=str)
+    parser.add_argument('--valid_json_file', default='/media/yingges/Data/201910/FT/FTData/ft_det_cleanedup/ignore_toosmall/11_30/generic_cls_valid.json', type=str)
     parser.add_argument('--valid_size_thr', type=int)
     parser.add_argument('--valid_ratio', default=1, help='The ratio of validation files.', type=float)
+    parser.add_argument('--finegrained_cls', default=False, action='store_true')
     return parser.parse_args()
 
 if __name__ == '__main__':
@@ -202,27 +205,27 @@ if __name__ == '__main__':
     if PRE_DEFINE_CATEGORIES == None:
         categories = get_categories(data_map)
     else:
-        categories = PRE_DEFINE_CATEGORIES
+        categories = PRE_DEFINE_CATEGORIES if args.finegrained_cls else PRE_DEFINE_CATEGORIES_GENERIC
 
     irre_data_cnt = 0
     bad_image_data = 0 
     invalid_data_cnt = 0
     if args.valid_ratio == 1:
-        stat = convert(data_map, shuffled_list, args.valid_json_file, categories, 'valid', args.valid_size_thr)
+        stat = convert(data_map, shuffled_list, args.valid_json_file, categories, 'valid', args.finegrained_cls, args.valid_size_thr)
         irre_data_cnt += stat[0]
         bad_image_data += stat[1]
         invalid_data_cnt += stat[2]
     elif args.valid_ratio == 0:
-        stat = convert(data_map, shuffled_list, args.train_json_file, categories, 'train')
+        stat = convert(data_map, shuffled_list, args.train_json_file, categories, 'train', args.finegrained_cls)
         irre_data_cnt += stat[0]
         bad_image_data += stat[1]
         invalid_data_cnt += stat[2]
     else:
-        stat = convert(data_map, shuffled_list[:train_size], args.train_json_file, categories, 'train')
+        stat = convert(data_map, shuffled_list[:train_size], args.train_json_file, categories, 'train', args.finegrained_cls)
         irre_data_cnt += stat[0]
         bad_image_data += stat[1]
         invalid_data_cnt += stat[2]
-        stat = convert(data_map, shuffled_list[train_size:], args.valid_json_file, categories, 'valid', args.valid_size_thr)
+        stat = convert(data_map, shuffled_list[train_size:], args.valid_json_file, categories, 'valid', args.finegrained_cls, args.valid_size_thr)
         irre_data_cnt += stat[0]
         bad_image_data += stat[1]
         invalid_data_cnt += stat[2]

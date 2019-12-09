@@ -22,20 +22,6 @@ sys.path.insert(0, pj(cur_path, '..', '..', '..', '..'))
 import yx_toolset.python.utils.data_conversion as data_conversion
 from yx_toolset.python.utils.data_conversion import find_det_parent_class
 
-def parse_args():
-    parser = argparse.ArgumentParser()
-    # set as optional for now
-    # better require abs path
-    parser.add_argument('--label_map_path', default='/home/neut/Desktop/yingges/201911/data/yunxikeji-01-2019-10-21/ft_seg_label_map.txt')
-    parser.add_argument('--ft_data_dir', default='/home/neut/Desktop/yingges/201911/data/yunxikeji-01-2019-10-21')
-    parser.add_argument('--subfolders', help='Indicates if the input path contains subfolders.',action='store_true')
-    parser.add_argument('--label_source', choices=['og', 'xml'], default='og', help='The source of the label files')
-    parser.add_argument('--ann_type', choices=['bbox', 'seg'], default='seg')
-    parser.add_argument('--train_record_path', default='/home/neut/Desktop/yingges/201911/data/yunxikeji-01-2019-10-21/train.record')
-    parser.add_argument('--valid_record_path', default='/home/neut/Desktop/yingges/201911/data/yunxikeji-01-2019-10-21/valid.record')
-    parser.add_argument('--valid_ratio', default=0.1, help='The ratio of validation files.', type=float)
-    return parser.parse_args()
-
 def check_bimask_validity(mask):
     num_pixel = 0
     for p in np.asarray(mask).flatten():
@@ -290,6 +276,20 @@ def convert(data_map,
         if tf_example:
             writer.write(tf_example.SerializeToString())
 
+def parse_args():
+    parser = argparse.ArgumentParser()
+    # set as optional for now
+    # better require abs path
+    parser.add_argument('--label_map_path', default='/home/neut/Desktop/yingges/201911/data/yunxikeji-01-2019-10-21/ft_seg_label_map.txt')
+    parser.add_argument('--ft_data_dir', default='/home/neut/Desktop/yingges/201911/data/yunxikeji-01-2019-10-21')
+    parser.add_argument('--subfolders', help='Indicates if the input path contains subfolders.',action='store_true')
+    parser.add_argument('--label_source', choices=['og', 'xml'], default='og', help='The source of the label files')
+    parser.add_argument('--ann_type', choices=['bbox', 'seg'], default='seg')
+    parser.add_argument('--train_record_path', default='/home/neut/Desktop/yingges/201911/data/yunxikeji-01-2019-10-21/train.record')
+    parser.add_argument('--valid_record_path', default='/home/neut/Desktop/yingges/201911/data/yunxikeji-01-2019-10-21/valid.record')
+    parser.add_argument('--valid_ratio', default=0.1, help='The ratio of validation files.', type=float)
+    return parser.parse_args()
+
 def main(_):
     args = parse_args()
 
@@ -306,7 +306,9 @@ def main(_):
         else:
             convert(data_map, shuffled_list[:train_size], train_writer, label_map_dict, args.ann_type)
             convert(data_map, shuffled_list[train_size:], valid_writer, label_map_dict, args.ann_type)
-        
+    
+    
+    # The fxxml interface needs to be updated   
     # if args.label_source == 'xml':
     #     for file in os.listdir(args.ft_data_dir):
     #         if file.split('.')[-1] != 'xml':

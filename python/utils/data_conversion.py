@@ -51,8 +51,8 @@ def parse_folder_ft_det(input_path, subfolders, valid_ratio):
 
     return res_dict, shuffled_list, train_size
 
-def find_det_parent_class(in_cls, orphan=True):
-    if orphan:
+def find_det_parent_class(in_cls, finegrained_cls):
+    if finegrained_cls:
         if in_cls.startswith('pl'):
             return 'pl'
         elif in_cls.startswith('pm'):

@@ -195,7 +195,7 @@ def data_stats(annFile):
 
 def main():
     parser = argparse.ArgumentParser(description='')
-    parser.add_argument('--mode', default='eval', choices=['eval', 'viz', 'stats'])
+    parser.add_argument('--mode', default='stats', choices=['eval', 'viz', 'stats'])
     parser.add_argument('--ann_type', default='bbox')
     parser.add_argument('--anno_file_path', default='/media/yingges/Data/Datasets/COCO/annotations/instances_val2017.json', type=str)
     parser.add_argument('--img_folder_path', default='/media/yingges/Data/Datasets/COCO/val2017',type=str)
@@ -207,7 +207,7 @@ def main():
     args = parser.parse_args()
 
     # args.img_folder_path = '/home/yingges/Downloads/crop/images'
-    args.anno_file_path = '/media/yingges/Data/201910/FT/FTData/ft_det_cleanedup/ignore_toosmall/11_30/valid.json'
+    args.anno_file_path = '/media/yingges/Data/201910/FT/FTData/ft_det_cleanedup/cocoformat_train_out.json'
     args.res_file_path = '/media/yingges/Data/201910/FT/FTData/ft_det_cleanedup/ignore_toosmall/11_30/epoch21_output.json'
 
     if args.mode == 'viz':
