@@ -45,7 +45,7 @@ def parse_folder_ft_det(input_path, subfolders, valid_ratio):
         if len(v) == 1:
             del res_dict[k]
 
-    shuffled_list = res_dict.keys()
+    shuffled_list = list(res_dict.keys())
     random.shuffle(shuffled_list)
     train_size = int(math.floor(len(shuffled_list) * (1 - float(valid_ratio))))
 

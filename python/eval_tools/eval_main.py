@@ -9,11 +9,18 @@ import sys
 import pylab
 pylab.rcParams['figure.figsize'] = (8.0, 10.0)
 
+from collections import defaultdict
 from matplotlib.collections import PatchCollection
 from matplotlib.patches import Rectangle
 from os.path import join as pj
 from pycocotools.coco import COCO
 from pycocotools.cocoeval import COCOeval
+
+PREDEFINED_CLASSES = ['io', 'wo', 'ors', 'p10', 'p11', 
+                      'p26', 'p20', 'p23', 'p19', 'pne',
+                      'rn', 'ps', 'p5', 'lo', 'tl',
+                      'pg', 'sc1','sc0', 'ro', 'pn',
+                      'po', 'pl', 'pm']
 
 def evaluate(annFile, resFile, annType, per_cls_stat=False):
     """
@@ -70,6 +77,7 @@ def evaluate_curve(annFile, resFile, annType, score_thr=0.2, split=10):
     n = int(len(anns) / split) # chunk length
     anns_chunks = [anns[0:i + n] for i in range(0, len(anns), n)]
     num_gt = len(cocoGt.anns)
+    output = []
     for chunk in anns_chunks:
         tmp_json_dict = {'images': copy.deepcopy(cocoGt.dataset['images']),
                          'categories':  copy.deepcopy(cocoGt.dataset['categories']),
@@ -94,7 +102,9 @@ def evaluate_curve(annFile, resFile, annType, score_thr=0.2, split=10):
         for res in res_list:
             num_hit += np.count_nonzero(res['gtMatches'][0]) # .5 IOU hits
         num_hit /= 3
-        print('ACC: {:.3f}, RECALL: {:.3f}'.format(num_hit / len(chunk), num_hit / num_gt))
+        output.append((num_hit / len(chunk), num_hit / num_gt))
+    for out in output:
+        print('ACC: {:.3f}, RECALL: {:.3f}'.format(out[0], out[1]))
 
         # E = [e for e in cocoEval.evalImgs if not e is None]
         # dtScores = np.concatenate([e['dtScores'][0:100] for e in E])
@@ -163,6 +173,14 @@ def coco_format_viz(img_folder, annFile):
         plt.title(img['file_name'])
         plt.show()
 
+def data_stats(annFile):
+    with open(annFile) as file:
+        json_dict = json.load(file)
+    cls_cnt = defaultdict(int)
+    for ann in json_dict['annotations']:
+        cls_cnt[PREDEFINED_CLASSES[ann['category_id'] - 1]] += 1
+    print(cls_cnt)
+
 def main():
     parser = argparse.ArgumentParser(description='')
     parser.add_argument('--mode', default='eval')
@@ -172,17 +190,18 @@ def main():
     parser.add_argument('--res_file_path', default='/media/yingges/Data/201910/yolact/yolact/results/mask_detections.json')
     parser.add_argument('--per_cls_stat', action='store_true')
     parser.add_argument('--map_curve', default=True, action='store_true')
-    parser.add_argument('--score_thr', default=0, type=float)
+    parser.add_argument('--score_thr', default=0.2, type=float)
 
     args = parser.parse_args()
 
     # args.img_folder_path = '/home/yingges/Downloads/crop/images'
-    args.anno_file_path = '/home/yingges/Desktop/yingges/experiments/data/ft_det_cleanedup/ignore_toosmall/11_30/valid.json'
-    args.res_file_path = '/home/yingges/Desktop/yingges/experiments/data/ft_det_cleanedup/ignore_toosmall/11_30/epoch21_output.json'
+    args.anno_file_path = '/media/yingges/Data/201910/FT/FTData/ft_det_cleanedup/ignore_toosmall/11_30/og_files/valid.json'
+    args.res_file_path = '/media/yingges/Data/201910/FT/FTData/ft_det_cleanedup/ignore_toosmall/11_30/epoch21_output.json'
 
     if args.mode == 'viz':
         coco_format_viz(args.img_folder_path, args.anno_file_path)
     if args.mode == 'eval':
+        data_stats(args.anno_file_path)
         if args.map_curve:
             evaluate_curve(args.anno_file_path, args.res_file_path, args.ann_type, args.score_thr)
         else:

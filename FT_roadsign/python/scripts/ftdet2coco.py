@@ -24,15 +24,6 @@ PRE_DEFINE_CATEGORIES = {'io': 1, 'wo': 2, 'ors': 3, 'p10': 4, 'p11': 5,
                          'pg': 16, 'sc1': 17,'sc0': 18, 'ro': 19, 'pn': 20, 
                          'po': 21, 'pl': 22, 'pm': 23}
 
-def parse_args():
-    parser = argparse.ArgumentParser('Convert FT detection data into COCO format.')
-    parser.add_argument('--input_path', default='/home/yingges/Downloads/crop', type=str)
-    parser.add_argument('--subfolders', help='Indicates if the input path contains subfolders.',action='store_true')
-    parser.add_argument('--train_json_file', default='/home/yingges/Downloads/crop/train.json', type=str)
-    parser.add_argument('--valid_json_file', default='/home/yingges/Downloads/crop/valid.json', type=str)
-    parser.add_argument('--valid_ratio', default=0.15, help='The ratio of validation files.', type=float)
-    return parser.parse_args()
-
 def get_categories(in_files):
     classes_names = set()
 
@@ -73,8 +64,8 @@ def write_one_image(json_dict,
                     image_path, 
                     img_id,
                     set_type,
-                    output_irre=False,
-                    size_thresh=225):
+                    size_thresh,
+                    output_irre=False):
     """
     Args:
         output_irre: If set to true save irrelavant files instead
@@ -147,7 +138,7 @@ def write_one_image(json_dict,
 
     return  img_id, anno_id, bad_flag, too_small
 
-def convert(data_map, data_map_keys, out_file, categories, set_type):
+def convert(data_map, data_map_keys, out_file, categories, set_type, valid_size_thr=0):
     out_json_dict = {'images': [], 'type': 'instances', 'annotations':[], 'categories':[]}
 
     img_id = 1
@@ -171,7 +162,8 @@ def convert(data_map, data_map_keys, out_file, categories, set_type):
                               anno_id, 
                               data_map[key][0], 
                               img_id,
-                              set_type)
+                              set_type,
+                              valid_size_thr)
         if ret:
             img_id, anno_id, _, too_small = ret
             if ret[2]: bad_image_data += 1
@@ -193,6 +185,16 @@ def convert(data_map, data_map_keys, out_file, categories, set_type):
 
     return irre_data_cnt, bad_image_data, invalid_data_cnt
 
+def parse_args():
+    parser = argparse.ArgumentParser('Convert FT detection data into COCO format.')
+    parser.add_argument('--input_path', default='/media/yingges/Data/201910/FT/FTData/ft_det_cleanedup/ignore_toosmall/11_30/og_files', type=str)
+    parser.add_argument('--subfolders', help='Indicates if the input path contains subfolders.',action='store_true')
+    parser.add_argument('--train_json_file', default='/home/yingges/Downloads/crop/train.json', type=str)
+    parser.add_argument('--valid_json_file', default='/media/yingges/Data/201910/FT/FTData/ft_det_cleanedup/ignore_toosmall/11_30/og_files/valid.json', type=str)
+    parser.add_argument('--valid_size_thr', type=int)
+    parser.add_argument('--valid_ratio', default=1, help='The ratio of validation files.', type=float)
+    return parser.parse_args()
+
 if __name__ == '__main__':
     args = parse_args()
 
@@ -206,7 +208,7 @@ if __name__ == '__main__':
     bad_image_data = 0 
     invalid_data_cnt = 0
     if args.valid_ratio == 1:
-        stat = convert(data_map, shuffled_list, args.valid_json_file, categories, 'valid')
+        stat = convert(data_map, shuffled_list, args.valid_json_file, categories, 'valid', args.valid_size_thr)
         irre_data_cnt += stat[0]
         bad_image_data += stat[1]
         invalid_data_cnt += stat[2]
@@ -220,7 +222,7 @@ if __name__ == '__main__':
         irre_data_cnt += stat[0]
         bad_image_data += stat[1]
         invalid_data_cnt += stat[2]
-        stat = convert(data_map, shuffled_list[train_size:], args.valid_json_file, categories, 'valid')
+        stat = convert(data_map, shuffled_list[train_size:], args.valid_json_file, categories, 'valid', args.valid_size_thr)
         irre_data_cnt += stat[0]
         bad_image_data += stat[1]
         invalid_data_cnt += stat[2]
