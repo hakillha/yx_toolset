@@ -178,34 +178,47 @@ def data_stats(annFile):
         json_dict = json.load(file)
     cls_cnt = defaultdict(int)
     for ann in json_dict['annotations']:
-        cls_cnt[PREDEFINED_CLASSES[ann['category_id'] - 1]] += 1
+        cls_name = PREDEFINED_CLASSES[ann['category_id'] - 1]
+        if cls_name in ['rn', 'ro', 'lo', 'ors']:
+            cls_name = 'panel'
+        elif cls_name.startswith('p'):
+            cls_name = 'po'
+        cls_cnt[cls_name] += 1
+    total_sample_cnt = 0
+    for k, v in cls_cnt.items():
+        total_sample_cnt += v
+    cls_percent = dict()
+    for k, v in cls_cnt.items():
+        cls_percent[k] = v / total_sample_cnt
     print(cls_cnt)
+    print(cls_percent)
 
 def main():
     parser = argparse.ArgumentParser(description='')
-    parser.add_argument('--mode', default='eval')
+    parser.add_argument('--mode', default='eval', choices=['eval', 'viz', 'stats'])
     parser.add_argument('--ann_type', default='bbox')
     parser.add_argument('--anno_file_path', default='/media/yingges/Data/Datasets/COCO/annotations/instances_val2017.json', type=str)
     parser.add_argument('--img_folder_path', default='/media/yingges/Data/Datasets/COCO/val2017',type=str)
     parser.add_argument('--res_file_path', default='/media/yingges/Data/201910/yolact/yolact/results/mask_detections.json')
     parser.add_argument('--per_cls_stat', action='store_true')
     parser.add_argument('--map_curve', default=True, action='store_true')
-    parser.add_argument('--score_thr', default=0.2, type=float)
+    parser.add_argument('--score_thr', default=0.25, type=float)
 
     args = parser.parse_args()
 
     # args.img_folder_path = '/home/yingges/Downloads/crop/images'
-    args.anno_file_path = '/media/yingges/Data/201910/FT/FTData/ft_det_cleanedup/ignore_toosmall/11_30/og_files/valid.json'
+    args.anno_file_path = '/media/yingges/Data/201910/FT/FTData/ft_det_cleanedup/ignore_toosmall/11_30/valid.json'
     args.res_file_path = '/media/yingges/Data/201910/FT/FTData/ft_det_cleanedup/ignore_toosmall/11_30/epoch21_output.json'
 
     if args.mode == 'viz':
         coco_format_viz(args.img_folder_path, args.anno_file_path)
-    if args.mode == 'eval':
-        data_stats(args.anno_file_path)
+    elif args.mode == 'eval':
         if args.map_curve:
             evaluate_curve(args.anno_file_path, args.res_file_path, args.ann_type, args.score_thr)
         else:
             evaluate(args.anno_file_path, args.res_file_path, args.ann_type, args.per_cls_stat)
+    elif args.mode =='stats':
+        data_stats(args.anno_file_path)
 
 if __name__ == '__main__':
     main()
