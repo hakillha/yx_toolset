@@ -15,7 +15,12 @@ sys.path.insert(0, pj(cur_path, '..', '..', '..', '..'))
 import yx_toolset.python.utils.data_conversion as data_conversion
 from yx_toolset.python.utils.data_conversion import find_det_parent_class
 
-# PRE_DEFINE_CATEGORIES = None
+
+PRE_DEFINE_CATEGORIES_GENERIC_UPDATED = {'i': 1, 'p': 2, 'wo': 3, 'rn': 4, 'lo': 5, 
+                                         'tl': 6, 'ro': 7, 'sc0': 8, 'sc1': 9, 'ors': 10}
+PRE_DEFINE_CATEGORIES_GENERIC_UPDATED_TEST = {'i': 1, 'p': 2, 'wo': 3, 'rn': 4, 'lo': 5, 
+                                              'tl': 6, 'ro': 7, 'sc0': 8, 'sc1': 9}
+
 PRE_DEFINE_CATEGORIES_GENERIC = {'i': 1, 'p': 2, 'wo': 3, 'rn': 4, 'lo': 5, 
                                  'tl': 6, 'ro': 7}
 PRE_DEFINE_CATEGORIES = {'io': 1, 'wo': 2, 'ors': 3, 'p10': 4, 'p11': 5, 
@@ -189,12 +194,12 @@ def convert(data_map, data_map_keys, out_file, categories, set_type, finegrained
 
 def parse_args():
     parser = argparse.ArgumentParser('Convert FT detection data into COCO format.')
-    parser.add_argument('--input_path', default='/media/yingges/Data/201910/FT/FTData/ft_det_cleanedup/ignore_toosmall/11_30/', type=str)
+    parser.add_argument('--input_path', default='/media/yingges/Data/201910/FT/FTData/ft_det_cleanedup/', type=str)
     parser.add_argument('--subfolders', help='Indicates if the input path contains subfolders.',action='store_true')
-    parser.add_argument('--train_json_file', default='/home/yingges/Downloads/crop/train.json', type=str)
-    parser.add_argument('--valid_json_file', default='/media/yingges/Data/201910/FT/FTData/ft_det_cleanedup/ignore_toosmall/11_30/generic_cls_valid.json', type=str)
-    parser.add_argument('--valid_size_thr', type=int)
-    parser.add_argument('--valid_ratio', default=1, help='The ratio of validation files.', type=float)
+    parser.add_argument('--train_json_file', default='/media/yingges/Data/201910/FT/FTData/ft_det_cleanedup/updated_generic/train.json', type=str)
+    parser.add_argument('--valid_json_file', default='/media/yingges/Data/201910/FT/FTData/ft_det_cleanedup/updated_generic/valid.json', type=str)
+    parser.add_argument('--valid_size_thr', default=625, type=int)
+    parser.add_argument('--valid_ratio', default=0.15, help='The ratio of validation files.', type=float)
     parser.add_argument('--finegrained_cls', default=False, action='store_true')
     return parser.parse_args()
 
@@ -205,13 +210,15 @@ if __name__ == '__main__':
     if PRE_DEFINE_CATEGORIES == None:
         categories = get_categories(data_map)
     else:
-        categories = PRE_DEFINE_CATEGORIES if args.finegrained_cls else PRE_DEFINE_CATEGORIES_GENERIC
+        # categories = PRE_DEFINE_CATEGORIES if args.finegrained_cls else PRE_DEFINE_CATEGORIES_GENERIC
+        categories = PRE_DEFINE_CATEGORIES_GENERIC_UPDATED
+        categories_test = PRE_DEFINE_CATEGORIES_GENERIC_UPDATED_TEST
 
     irre_data_cnt = 0
     bad_image_data = 0 
     invalid_data_cnt = 0
     if args.valid_ratio == 1:
-        stat = convert(data_map, shuffled_list, args.valid_json_file, categories, 'valid', args.finegrained_cls, args.valid_size_thr)
+        stat = convert(data_map, shuffled_list, args.valid_json_file, categories_test, 'valid', args.finegrained_cls, args.valid_size_thr)
         irre_data_cnt += stat[0]
         bad_image_data += stat[1]
         invalid_data_cnt += stat[2]
@@ -225,7 +232,7 @@ if __name__ == '__main__':
         irre_data_cnt += stat[0]
         bad_image_data += stat[1]
         invalid_data_cnt += stat[2]
-        stat = convert(data_map, shuffled_list[train_size:], args.valid_json_file, categories, 'valid', args.finegrained_cls, args.valid_size_thr)
+        stat = convert(data_map, shuffled_list[train_size:], args.valid_json_file, categories_test, 'valid', args.finegrained_cls, args.valid_size_thr)
         irre_data_cnt += stat[0]
         bad_image_data += stat[1]
         invalid_data_cnt += stat[2]

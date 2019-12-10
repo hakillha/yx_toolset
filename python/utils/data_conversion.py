@@ -1,3 +1,4 @@
+import json
 import math
 import os
 import random
@@ -99,3 +100,35 @@ def ft_mask_conversion(width, height, anno):
         return
 
     return [xmin, ymin, xmax, ymax], point_set
+
+# PREDEFINED_CLASSES_GENERIC = ['i','p', 'wo', 'rn', 'lo', 'tl',  'ro']
+PRE_DEFINE_CATEGORIES_GENERIC = {'i': 1, 'p': 2, 'wo': 3, 'rn': 4, 'lo': 5, 
+                                 'tl': 6, 'ro': 7}
+PREDEFINED_CLASSES = ['io', 'wo', 'ors', 'p10', 'p11', 
+                      'p26', 'p20', 'p23', 'p19', 'pne',
+                      'rn', 'ps', 'p5', 'lo', 'tl',
+                      'pg', 'sc1','sc0', 'ro', 'pn',
+                      'po', 'pl', 'pm']
+
+def merge_cls(inFile, outFile):
+    with open(inFile) as f:
+        json_list = json.load(f)
+    out_json_list = []
+    for ann in json_list:
+        if ann['category_name'] in ['ors', 'sc0', 'sc1']:
+            continue
+        elif ann['category_name'].startswith('p'):
+            ann['category_name'] = 'p'
+            ann['category_id'] = PRE_DEFINE_CATEGORIES_GENERIC['p']
+        elif ann['category_name'] == 'io':
+            ann['category_name'] = 'i'
+            ann['category_id'] = PRE_DEFINE_CATEGORIES_GENERIC['i']
+        else:
+            ann['category_id'] = PRE_DEFINE_CATEGORIES_GENERIC[ann['category_name']]
+        out_json_list.append(ann)
+    with open(outFile, 'w') as f:
+        f.write(json.dumps(out_json_list))
+
+if __name__ == '__main__':
+    merge_cls('/media/yingges/Data/201910/FT/FTData/ft_det_cleanedup/ignore_toosmall/11_30/og_files/generic_valid_sizethr625_fpn.json',
+              '/media/yingges/Data/201910/FT/FTData/ft_det_cleanedup/ignore_toosmall/11_30/og_files/merged_generic_valid_sizethr625_fpn.json')

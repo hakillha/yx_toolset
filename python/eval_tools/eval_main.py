@@ -16,12 +16,6 @@ from os.path import join as pj
 from pycocotools.coco import COCO
 from pycocotools.cocoeval import COCOeval
 
-PREDEFINED_CLASSES = ['io', 'wo', 'ors', 'p10', 'p11', 
-                      'p26', 'p20', 'p23', 'p19', 'pne',
-                      'rn', 'ps', 'p5', 'lo', 'tl',
-                      'pg', 'sc1','sc0', 'ro', 'pn',
-                      'po', 'pl', 'pm']
-
 def evaluate(annFile, resFile, annType, per_cls_stat=False):
     """
         Args: annType has the following types ['segm','bbox','keypoints']
@@ -173,12 +167,12 @@ def coco_format_viz(img_folder, annFile):
         plt.title(img['file_name'])
         plt.show()
 
-def data_stats(annFile):
+def data_stats(annFile, categories):
     with open(annFile) as file:
         json_dict = json.load(file)
     cls_cnt = defaultdict(int)
     for ann in json_dict['annotations']:
-        cls_name = PREDEFINED_CLASSES[ann['category_id'] - 1]
+        cls_name = categories[ann['category_id'] - 1]
         if cls_name in ['rn', 'ro', 'lo', 'ors']:
             cls_name = 'panel'
         elif cls_name.startswith('p'):
@@ -193,23 +187,33 @@ def data_stats(annFile):
     print(cls_cnt)
     print(cls_percent)
 
+PREDEFINED_CLASSES_GENERIC = ['i','p', 'wo', 'rn', 'lo', 'tl',  'ro']
+PREDEFINED_CLASSES = ['io', 'wo', 'ors', 'p10', 'p11', 
+                      'p26', 'p20', 'p23', 'p19', 'pne',
+                      'rn', 'ps', 'p5', 'lo', 'tl',
+                      'pg', 'sc1','sc0', 'ro', 'pn',
+                      'po', 'pl', 'pm']
+
 def main():
     parser = argparse.ArgumentParser(description='')
-    parser.add_argument('--mode', default='stats', choices=['eval', 'viz', 'stats'])
+    parser.add_argument('--mode', default='eval', choices=['eval', 'viz', 'stats'])
     parser.add_argument('--ann_type', default='bbox')
     parser.add_argument('--anno_file_path', default='/media/yingges/Data/Datasets/COCO/annotations/instances_val2017.json', type=str)
     parser.add_argument('--img_folder_path', default='/media/yingges/Data/Datasets/COCO/val2017',type=str)
     parser.add_argument('--res_file_path', default='/media/yingges/Data/201910/yolact/yolact/results/mask_detections.json')
     parser.add_argument('--per_cls_stat', action='store_true')
-    parser.add_argument('--map_curve', default=True, action='store_true')
-    parser.add_argument('--score_thr', default=0.25, type=float)
-
+    parser.add_argument('--map_curve', default=False, action='store_true')
+    parser.add_argument('--score_thr', default=0.5, help='This only works when evaluating the global average precision.', type=float)
+    parser.add_argument('--finegrained_cls', default=True, action='store_true')
     args = parser.parse_args()
 
     # args.img_folder_path = '/home/yingges/Downloads/crop/images'
-    args.anno_file_path = '/media/yingges/Data/201910/FT/FTData/ft_det_cleanedup/cocoformat_train_out.json'
-    args.res_file_path = '/media/yingges/Data/201910/FT/FTData/ft_det_cleanedup/ignore_toosmall/11_30/epoch21_output.json'
+    # args.anno_file_path = '/media/yingges/Data/201910/FT/FTData/ft_det_cleanedup/ignore_toosmall/11_30/og_files/valid.json'
+    # args.res_file_path = '/media/yingges/Data/201910/FT/FTData/ft_det_cleanedup/ignore_toosmall/11_30/og_files/output_nothr.json'
+    args.anno_file_path = '/media/yingges/Data/201910/FT/FTData/ft_det_cleanedup/ignore_toosmall/11_30/og_files/fg_valid_sizethr625.json'
+    args.res_file_path = '/media/yingges/Data/201910/FT/FTData/ft_det_cleanedup/ignore_toosmall/11_30/og_files/fg_output_sizethr625.json'
 
+    categories = PREDEFINED_CLASSES if args.finegrained_cls else PREDEFINED_CLASSES_GENERIC
     if args.mode == 'viz':
         coco_format_viz(args.img_folder_path, args.anno_file_path)
     elif args.mode == 'eval':
@@ -217,8 +221,9 @@ def main():
             evaluate_curve(args.anno_file_path, args.res_file_path, args.ann_type, args.score_thr)
         else:
             evaluate(args.anno_file_path, args.res_file_path, args.ann_type, args.per_cls_stat)
+        data_stats(args.anno_file_path, categories)
     elif args.mode =='stats':
-        data_stats(args.anno_file_path)
+        data_stats(args.anno_file_path, categories)
 
 if __name__ == '__main__':
     main()
