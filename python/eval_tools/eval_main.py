@@ -7,7 +7,7 @@ import random
 import skimage.io as io
 import sys
 import pylab
-pylab.rcParams['figure.figsize'] = (8.0, 10.0)
+# pylab.rcParams['figure.figsize'] = (12.0, 15.0)
 
 from collections import defaultdict
 from matplotlib.collections import PatchCollection
@@ -154,6 +154,7 @@ def coco_format_viz(img_folder, annFile):
 
     catIds = coco.getCatIds()
     imgIds = coco.getImgIds()
+    # catIds = [0, 1, 20]
 
     for imgId in random.sample(imgIds, 50):
         img = coco.loadImgs(imgId)[0]
@@ -164,8 +165,12 @@ def coco_format_viz(img_folder, annFile):
         anns = coco.loadAnns(annIds)
         print('Height: {}\n Width: {}\n'.format(img['height'], img['width']))
         showBndbox(coco, anns)
+        fig = plt.gcf()
+        fig.set_size_inches(18.5, 10.5)
         plt.title(img['file_name'])
-        plt.show()
+        plt.savefig(pj('/home/yingges/Desktop/yingges/experiments/data/ft_det_cleanedup/ignore_toosmall/11_30/img_annoed', img['file_name']))
+        # plt.show()
+        plt.close()
 
 def data_stats(annFile, categories):
     with open(annFile) as file:
@@ -196,7 +201,7 @@ PREDEFINED_CLASSES = ['io', 'wo', 'ors', 'p10', 'p11',
 
 def main():
     parser = argparse.ArgumentParser(description='')
-    parser.add_argument('--mode', default='eval', choices=['eval', 'viz', 'stats'])
+    parser.add_argument('--mode', default='viz', choices=['eval', 'viz', 'stats'])
     parser.add_argument('--ann_type', default='bbox')
     parser.add_argument('--anno_file_path', default='/media/yingges/Data/Datasets/COCO/annotations/instances_val2017.json', type=str)
     parser.add_argument('--img_folder_path', default='/media/yingges/Data/Datasets/COCO/val2017',type=str)
@@ -210,7 +215,8 @@ def main():
     # args.img_folder_path = '/home/yingges/Downloads/crop/images'
     # args.anno_file_path = '/media/yingges/Data/201910/FT/FTData/ft_det_cleanedup/ignore_toosmall/11_30/og_files/valid.json'
     # args.res_file_path = '/media/yingges/Data/201910/FT/FTData/ft_det_cleanedup/ignore_toosmall/11_30/og_files/output_nothr.json'
-    args.anno_file_path = '/media/yingges/Data/201910/FT/FTData/ft_det_cleanedup/ignore_toosmall/11_30/og_files/fg_valid_sizethr625.json'
+    args.img_folder_path = '/home/yingges/Desktop/yingges/experiments/data/ft_det_cleanedup/ignore_toosmall/11_30/images'
+    args.anno_file_path = '/home/yingges/Desktop/yingges/experiments/data/ft_det_cleanedup/ignore_toosmall/11_30/valid.json'
     args.res_file_path = '/media/yingges/Data/201910/FT/FTData/ft_det_cleanedup/ignore_toosmall/11_30/og_files/fg_output_sizethr625.json'
 
     categories = PREDEFINED_CLASSES if args.finegrained_cls else PREDEFINED_CLASSES_GENERIC
