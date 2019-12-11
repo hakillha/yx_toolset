@@ -187,7 +187,9 @@ def data_stats(annFile, categories):
     print(cls_cnt)
     print(cls_percent)
 
-PREDEFINED_CLASSES_GENERIC = ['i','p', 'wo', 'rn', 'lo', 'tl',  'ro']
+# PREDEFINED_CLASSES_GENERIC = ['i','p', 'wo', 'rn', 'lo', 'tl',  'ro']
+PRE_DEFINE_CATEGORIES_GENERIC_UPDATED_TEST = ['i' 'p', 'wo', 'rn', 'lo', 
+                                              'tl', 'ro', 'sc0', 'sc1']
 PREDEFINED_CLASSES = ['io', 'wo', 'ors', 'p10', 'p11', 
                       'p26', 'p20', 'p23', 'p19', 'pne',
                       'rn', 'ps', 'p5', 'lo', 'tl',
@@ -203,7 +205,7 @@ def main():
     parser.add_argument('--res_file_path', default='/media/yingges/Data/201910/yolact/yolact/results/mask_detections.json')
     parser.add_argument('--per_cls_stat', action='store_true')
     parser.add_argument('--map_curve', default=False, action='store_true')
-    parser.add_argument('--score_thr', default=0.5, help='This only works when evaluating the global average precision.', type=float)
+    parser.add_argument('--score_thr', default=0.2, help='This only works when evaluating the global average precision.', type=float)
     parser.add_argument('--finegrained_cls', default=True, action='store_true')
     args = parser.parse_args()
 
