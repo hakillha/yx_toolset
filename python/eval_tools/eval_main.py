@@ -192,9 +192,9 @@ def data_stats(annFile, categories):
     print(cls_cnt)
     print(cls_percent)
 
-# PREDEFINED_CLASSES_GENERIC = ['i','p', 'wo', 'rn', 'lo', 'tl',  'ro']
-PRE_DEFINE_CATEGORIES_GENERIC_UPDATED_TEST = ['i' 'p', 'wo', 'rn', 'lo', 
-                                              'tl', 'ro', 'sc0', 'sc1']
+PREDEFINED_CLASSES_GENERIC = ['i','p', 'wo', 'rn', 'lo', 'tl',  'ro']
+PREDEFINED_CLASSES_GENERIC_UPDATED_TEST = ['i', 'p', 'wo', 'rn', 'lo', 
+                                           'tl', 'ro', 'sc0', 'sc1']
 PREDEFINED_CLASSES = ['io', 'wo', 'ors', 'p10', 'p11', 
                       'p26', 'p20', 'p23', 'p19', 'pne',
                       'rn', 'ps', 'p5', 'lo', 'tl',
@@ -211,17 +211,17 @@ def main():
     parser.add_argument('--per_cls_stat', action='store_true')
     parser.add_argument('--map_curve', default=False, action='store_true')
     parser.add_argument('--score_thr', default=0.2, help='This only works when evaluating the global average precision.', type=float)
-    parser.add_argument('--finegrained_cls', default=True, action='store_true')
+    parser.add_argument('--finegrained_cls', default=False, action='store_true')
     args = parser.parse_args()
 
     # args.img_folder_path = '/home/yingges/Downloads/crop/images'
     # args.anno_file_path = '/media/yingges/Data/201910/FT/FTData/ft_det_cleanedup/ignore_toosmall/11_30/og_files/valid.json'
     # args.res_file_path = '/media/yingges/Data/201910/FT/FTData/ft_det_cleanedup/ignore_toosmall/11_30/og_files/output_nothr.json'
-    args.img_folder_path = '/home/yingges/Desktop/yingges/experiments/data/ft_det_cleanedup/ignore_toosmall/11_30/images'
-    args.anno_file_path = '/home/yingges/Desktop/yingges/experiments/data/ft_det_cleanedup/ignore_toosmall/11_30/valid.json'
-    args.res_file_path = '/media/yingges/Data/201910/FT/FTData/ft_det_cleanedup/ignore_toosmall/11_30/og_files/fg_output_sizethr625.json'
+    # args.img_folder_path = '/home/yingges/Desktop/yingges/experiments/data/ft_det_cleanedup/ignore_toosmall/11_30/images'
+    # args.anno_file_path = '/home/yingges/Desktop/yingges/experiments/data/ft_det_cleanedup/ignore_toosmall/11_30/valid.json'
+    # args.res_file_path = '/media/yingges/Data/201910/FT/FTData/ft_det_cleanedup/ignore_toosmall/11_30/og_files/fg_output_sizethr625.json'
 
-    categories = PREDEFINED_CLASSES if args.finegrained_cls else PREDEFINED_CLASSES_GENERIC
+    categories = PREDEFINED_CLASSES if args.finegrained_cls else PREDEFINED_CLASSES_GENERIC_UPDATED_TEST
     if args.mode == 'viz':
         coco_format_viz(args.img_folder_path, args.anno_file_path)
     elif args.mode == 'eval':
