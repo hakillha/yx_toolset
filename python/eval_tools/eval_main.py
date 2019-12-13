@@ -175,12 +175,16 @@ def coco_format_viz(img_folder, annFile):
 def data_stats(annFile, categories):
     with open(annFile) as file:
         json_dict = json.load(file)
+    # Collect stats on the shorter side of the bbs
+    size_list = []
     cls_cnt = defaultdict(int)
     for ann in json_dict['annotations']:
         cls_name = categories[ann['category_id'] - 1]
-        if cls_name in ['rn', 'ro', 'lo', 'ors']:
-            cls_name = 'panel'
-        elif cls_name.startswith('p'):
+        size_list.append(min(ann['bbox'][2], ann['bbox'][3]))
+        # if cls_name in ['rn', 'ro', 'lo', 'ors']:
+        #     cls_name = 'panel'
+        # elif cls_name.startswith('p'):
+        if cls_name.startswith('p'):
             cls_name = 'po'
         cls_cnt[cls_name] += 1
     total_sample_cnt = 0
@@ -191,10 +195,14 @@ def data_stats(annFile, categories):
         cls_percent[k] = v / total_sample_cnt
     print(cls_cnt)
     print(cls_percent)
+    plt.hist(size_list, bins=20)
+    plt.show()
 
 PREDEFINED_CLASSES_GENERIC = ['i','p', 'wo', 'rn', 'lo', 'tl',  'ro']
 PREDEFINED_CLASSES_GENERIC_UPDATED_TEST = ['i', 'p', 'wo', 'rn', 'lo', 
                                            'tl', 'ro', 'sc0', 'sc1']
+PREDEFINED_CLASSES_GENERIC_UPDATED_TRAIN = ['i', 'p', 'wo', 'rn', 'lo', 
+                                            'tl', 'ro', 'sc0', 'sc1', 'ors']
 PREDEFINED_CLASSES = ['io', 'wo', 'ors', 'p10', 'p11', 
                       'p26', 'p20', 'p23', 'p19', 'pne',
                       'rn', 'ps', 'p5', 'lo', 'tl',
@@ -221,7 +229,8 @@ def main():
     # args.anno_file_path = '/home/yingges/Desktop/yingges/experiments/data/ft_det_cleanedup/ignore_toosmall/11_30/valid.json'
     # args.res_file_path = '/media/yingges/Data/201910/FT/FTData/ft_det_cleanedup/ignore_toosmall/11_30/og_files/fg_output_sizethr625.json'
 
-    categories = PREDEFINED_CLASSES if args.finegrained_cls else PREDEFINED_CLASSES_GENERIC_UPDATED_TEST
+    # categories = PREDEFINED_CLASSES if args.finegrained_cls else PREDEFINED_CLASSES_GENERIC_UPDATED_TEST
+    categories = PREDEFINED_CLASSES if args.finegrained_cls else PREDEFINED_CLASSES_GENERIC_UPDATED_TRAIN
     if args.mode == 'viz':
         coco_format_viz(args.img_folder_path, args.anno_file_path)
     elif args.mode == 'eval':
