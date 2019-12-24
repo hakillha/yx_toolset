@@ -25,6 +25,9 @@ if __name__ == '__main__':
     # extract_subset('/home/neut/Desktop/yingges/201911/data/yunxikeji-01-2019-10-21',
     #              '/home/neut/Desktop/yingges/201911/data/yunxikeji-01-2019-10-21/sample20',
     #              20)
-    extract_splitset('/media/yingges/Data/201910/FT/FTData/ft_det_cleanedup/ignore_toosmall/11_30/valid.json',
-                     '/media/yingges/Data/201910/FT/FTData/ft_od1_merged',
-                     '/media/yingges/Data/201910/FT/FTData/ft_det_cleanedup/ignore_toosmall/11_30/og_files')
+    # extract_splitset('/media/yingges/Data/201910/FT/FTData/ft_det_cleanedup/ignore_toosmall/11_30/valid.json',
+    #                  '/media/yingges/Data/201910/FT/FTData/ft_od1_merged',
+    #                  '/media/yingges/Data/201910/FT/FTData/ft_det_cleanedup/ignore_toosmall/11_30/og_files')
+    extract_splitset('/media/yingges/Data/201910/FT/FTData/ft_det_cleanedup/updated_generic/valid.json',
+                     '/media/yingges/Data/201910/FT/FTData/ft_det_cleanedup',
+                     '/media/yingges/Data/201910/FT/FTData/ft_det_cleanedup/updated_generic')

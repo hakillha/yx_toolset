@@ -110,7 +110,7 @@ def evaluate_curve(annFile, resFile, annType, score_thr=0.2, split=10):
         # tp = tp_sum[0]
         # print('ACC: {:.3f}, RECALL: {:.3f}'.format(tp / len(chunk), tp / num_gt))
 
-def showBndbox(coco, anns):
+def showBndbox(coco, anns, predefined_c=None):
     """
         Args: Dataset object in coco format
 
@@ -119,58 +119,82 @@ def showBndbox(coco, anns):
     rectangles = []
     color = []
     for ann in anns:
-        c = (np.random.random((1, 3))*0.6+0.4).tolist()[0]
         if 'bbox' in ann:
-            # score = float(ann['score'])
-            # if score < 0.5: continue
             bb = ann['bbox']
             rectangles.append(Rectangle((bb[0], bb[1]), bb[2], bb[3]))
+            if predefined_c is None:
+                c = (np.random.random((1, 3))*0.6+0.4).tolist()[0]
+            else:
+                c = predefined_c
             color.append(c)
             text = coco.loadCats(ann['category_id'])[0]['name']
-            # if 'score' in ann:
-            #   text = '%s: %.2f' % (coco.loadCats(ann['category_id'])[0]['name'], score)
-            # else:
-            #   text = coco.loadCats(ann['category_id'])[0]['name']
-            ax.text(bb[0], bb[1] - 15, text, color=[1, 1, 1], backgroundcolor=c, weight='bold')
+            if predefined_c == [1, 0, 0]:
+                ax.text(bb[0] + bb[2], bb[1] - 15, text, color=[1, 1, 1], backgroundcolor=c, weight='bold')
+            else:
+                ax.text(bb[0], bb[1] - 15, text, color=[1, 1, 1], backgroundcolor=c, weight='bold')
     p = PatchCollection(rectangles, facecolor='none', edgecolors=color, linewidths=2)
     ax.add_collection(p)
 
-def coco_format_viz(img_folder, annFile):
+def coco_format_viz(img_folder, annFile, annType, resFile=None, res_score_thr=0.5, save_path=None):
+    assert img_folder is not None, 'Please provide the img folder path!'
+
     coco = COCO(annFile)
     cats = coco.loadCats(coco.getCatIds())
-    nms = [cat['name'] for cat in cats]
-    print(' '.join(nms))
-    # catIds = coco.getCatIds(catNms=[nms[np.random.randint(0, len(nms))]])
-    # imgIds = coco.getImgIds(catIds=catIds)
-    # img = coco.loadImgs(imgIds[np.random.randint(0, len(imgIds))])[0]
-    # I = io.imread(pj(img_folder, img['file_name']))
+    all_cat_id = [cat['id'] for cat in cats]
+    catIds = coco.getCatIds(catNms=all_cat_id)
+    imgIds = coco.getImgIds(catIds=catIds)
 
-    # plt.imshow(I); plt.axis('off')
-    # annIds = coco.getAnnIds(imgIds=img['id'], catIds=catIds, iscrowd=None)
-    # anns = coco.loadAnns(annIds)
-    # # coco.showAnns(anns)
-    # showBndbox(coco, anns)
-    # plt.show()
+    if resFile is not None:
+        with open(resFile) as file:
+            json_list = json.load(file)
+        res_dict = defaultdict(list)
+        for out in json_list:
+            if out['score'] >= res_score_thr:
+                res_dict[out['image_id']].append(out)
 
-    catIds = coco.getCatIds()
-    imgIds = coco.getImgIds()
-    # catIds = [0, 1, 20]
-
-    for imgId in random.sample(imgIds, 50):
-        img = coco.loadImgs(imgId)[0]
+    # TODO: sample imgs
+    for i in range(len(imgIds)):
+        img = coco.loadImgs(imgIds[i])[0]
+        print(img['file_name'])
         I = io.imread(pj(img_folder, img['file_name']))
-
         plt.imshow(I); plt.axis('off')
         annIds = coco.getAnnIds(imgIds=img['id'], catIds=catIds, iscrowd=None)
         anns = coco.loadAnns(annIds)
-        print('Height: {}\n Width: {}\n'.format(img['height'], img['width']))
-        showBndbox(coco, anns)
+        if annType == 'segm':
+            coco.showAnns(anns)
+        elif annType == 'bbox':
+            if resFile is None:
+                showBndbox(coco, anns)
+            else:
+                showBndbox(coco, anns, [0, 1, 0])
+                showBndbox(coco, res_dict[img['id']], [1, 0, 0])
         fig = plt.gcf()
         fig.set_size_inches(18.5, 10.5)
-        plt.title(img['file_name'])
-        plt.savefig(pj('/home/yingges/Desktop/yingges/experiments/data/ft_det_cleanedup/ignore_toosmall/11_30/img_annoed', img['file_name']))
-        # plt.show()
+        if save_path is None:
+            plt.show()
+        else:
+            plt.savefig(pj(save_path, img['file_name']))
         plt.close()
+
+    # catIds = coco.getCatIds()
+    # imgIds = coco.getImgIds()
+    # # catIds = [0, 1, 20]
+
+    # for imgId in random.sample(imgIds, 50):
+    #     img = coco.loadImgs(imgId)[0]
+    #     I = io.imread(pj(img_folder, img['file_name']))
+
+    #     plt.imshow(I); plt.axis('off')
+    #     annIds = coco.getAnnIds(imgIds=img['id'], catIds=catIds, iscrowd=None)
+    #     anns = coco.loadAnns(annIds)
+    #     print('Height: {}\n Width: {}\n'.format(img['height'], img['width']))
+    #     showBndbox(coco, anns)
+    #     fig = plt.gcf()
+    #     fig.set_size_inches(18.5, 10.5)
+    #     plt.title(img['file_name'])
+    #     # plt.savefig(pj('/home/yingges/Desktop/yingges/experiments/data/ft_det_cleanedup/ignore_toosmall/11_30/img_annoed', img['file_name']))
+    #     plt.show()
+    #     plt.close()
 
 def data_stats(annFile, categories):
     with open(annFile) as file:
@@ -211,28 +235,22 @@ PREDEFINED_CLASSES = ['io', 'wo', 'ors', 'p10', 'p11',
 
 def main():
     parser = argparse.ArgumentParser(description='')
-    parser.add_argument('--mode', default='viz', choices=['eval', 'viz', 'stats'])
-    parser.add_argument('--ann_type', default='bbox')
-    parser.add_argument('--anno_file_path', default='/media/yingges/Data/Datasets/COCO/annotations/instances_val2017.json', type=str)
-    parser.add_argument('--img_folder_path', default='/media/yingges/Data/Datasets/COCO/val2017',type=str)
-    parser.add_argument('--res_file_path', default='/media/yingges/Data/201910/yolact/yolact/results/mask_detections.json')
+    parser.add_argument('--mode', default='eval', choices=['eval', 'viz', 'stats'])
+    parser.add_argument('--ann_type', default='bbox', choices=['segm','bbox','keypoints'])
+    parser.add_argument('--anno_file_path', type=str)
+    parser.add_argument('--img_folder_path',type=str)
+    parser.add_argument('--res_file_path', type=str)
     parser.add_argument('--per_cls_stat', action='store_true')
     parser.add_argument('--map_curve', default=False, action='store_true')
-    parser.add_argument('--score_thr', default=0.2, help='This only works when evaluating the global average precision.', type=float)
+    parser.add_argument('--score_thr', default=0, help='This only works when evaluating the global average precision.', type=float)
     parser.add_argument('--finegrained_cls', default=False, action='store_true')
+    parser.add_argument('--output_save_path', type=str)
     args = parser.parse_args()
-
-    # args.img_folder_path = '/home/yingges/Downloads/crop/images'
-    # args.anno_file_path = '/media/yingges/Data/201910/FT/FTData/ft_det_cleanedup/ignore_toosmall/11_30/og_files/valid.json'
-    # args.res_file_path = '/media/yingges/Data/201910/FT/FTData/ft_det_cleanedup/ignore_toosmall/11_30/og_files/output_nothr.json'
-    # args.img_folder_path = '/home/yingges/Desktop/yingges/experiments/data/ft_det_cleanedup/ignore_toosmall/11_30/images'
-    # args.anno_file_path = '/home/yingges/Desktop/yingges/experiments/data/ft_det_cleanedup/ignore_toosmall/11_30/valid.json'
-    # args.res_file_path = '/media/yingges/Data/201910/FT/FTData/ft_det_cleanedup/ignore_toosmall/11_30/og_files/fg_output_sizethr625.json'
 
     # categories = PREDEFINED_CLASSES if args.finegrained_cls else PREDEFINED_CLASSES_GENERIC_UPDATED_TEST
     categories = PREDEFINED_CLASSES if args.finegrained_cls else PREDEFINED_CLASSES_GENERIC_UPDATED_TRAIN
     if args.mode == 'viz':
-        coco_format_viz(args.img_folder_path, args.anno_file_path)
+        coco_format_viz(args.img_folder_path, args.anno_file_path, args.ann_type, resFile=args.res_file_path, save_path=args.output_save_path)
     elif args.mode == 'eval':
         if args.map_curve:
             evaluate_curve(args.anno_file_path, args.res_file_path, args.ann_type, args.score_thr)

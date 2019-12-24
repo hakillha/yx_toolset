@@ -18,16 +18,32 @@ from yx_toolset.python.utils.data_conversion import find_det_parent_class
 
 PRE_DEFINE_CATEGORIES_GENERIC_UPDATED = {'i': 1, 'p': 2, 'wo': 3, 'rn': 4, 'lo': 5, 
                                          'tl': 6, 'ro': 7, 'sc0': 8, 'sc1': 9, 'ors': 10}
-PRE_DEFINE_CATEGORIES_GENERIC_UPDATED_TEST = {'i': 1, 'p': 2, 'wo': 3, 'rn': 4, 'lo': 5, 
-                                              'tl': 6, 'ro': 7, 'sc0': 8, 'sc1': 9}
+# PRE_DEFINE_CATEGORIES_GENERIC_UPDATED_TEST = {'i': 1, 'p': 2, 'wo': 3, 'rn': 4, 'lo': 5, 
+#                                               'tl': 6, 'ro': 7, 'sc0': 8, 'sc1': 9}
 
-PRE_DEFINE_CATEGORIES_GENERIC = {'i': 1, 'p': 2, 'wo': 3, 'rn': 4, 'lo': 5, 
-                                 'tl': 6, 'ro': 7}
-PRE_DEFINE_CATEGORIES = {'io': 1, 'wo': 2, 'ors': 3, 'p10': 4, 'p11': 5, 
-                         'p26': 6, 'p20': 7, 'p23': 8, 'p19': 9, 'pne': 10, 
-                         'rn': 11, 'ps': 12, 'p5': 13, 'lo': 14, 'tl': 15, 
-                         'pg': 16, 'sc1': 17,'sc0': 18, 'ro': 19, 'pn': 20, 
-                         'po': 21, 'pl': 22, 'pm': 23}
+# PRE_DEFINE_CATEGORIES_GENERIC = {'i': 1, 'p': 2, 'wo': 3, 'rn': 4, 'lo': 5, 
+#                                  'tl': 6, 'ro': 7}
+# PRE_DEFINE_CATEGORIES = {'io': 1, 'wo': 2, 'ors': 3, 'p10': 4, 'p11': 5, 
+#                          'p26': 6, 'p20': 7, 'p23': 8, 'p19': 9, 'pne': 10, 
+#                          'rn': 11, 'ps': 12, 'p5': 13, 'lo': 14, 'tl': 15, 
+#                          'pg': 16, 'sc1': 17,'sc0': 18, 'ro': 19, 'pn': 20, 
+#                          'po': 21, 'pl': 22, 'pm': 23}
+
+# ['io', 'lo', 'tl', 'rn', 'ro', 
+   # 'wo', 'ors', 'sc1', 'sc0', 'p26', 
+   # 'p20', 'p23', 'ps', 'pne', 'pg', 
+   # 'pn', 'po', 'pl', 'pm', 'p10', 
+   # 'p11', 'p19', 'p5']
+
+# PRE_DEFINE_CATEGORIES = {'io': 1, 'p26': 10, 'p20': 11, 'p23': 12, 'ps': 13, 
+#                          'lo': 2, 'tl': 3, 'pg': 15, 'rn': 4, 'ro': 5, 
+#                          'pn': 16, 'po': 17, 'pl': 18, 'pm': 19, 'wo': 6, 
+#                          'ors': 7, 'sc1': 8, 'p10': 20, 'p11': 21, 'p19': 22, 
+#                          'pne': 14, 'sc0': 9, 'p5': 23}
+
+# PRE_DEFINE_CATEGORIES = {'sc0': 1, 'sc1': 2}
+
+PRE_DEFINE_CATEGORIES = PRE_DEFINE_CATEGORIES_GENERIC_UPDATED
 
 def get_categories(in_files):
     classes_names = set()
@@ -193,14 +209,32 @@ def convert(data_map, data_map_keys, out_file, categories, set_type, finegrained
     return irre_data_cnt, bad_image_data, invalid_data_cnt
 
 def parse_args():
-    parser = argparse.ArgumentParser('Convert FT detection data into COCO format.')
-    parser.add_argument('--input_path', default='/media/yingges/Data/201910/FT/FTData/ft_det_cleanedup/', type=str)
-    parser.add_argument('--subfolders', help='Indicates if the input path contains subfolders.',action='store_true')
-    parser.add_argument('--train_json_file', default='/media/yingges/Data/201910/FT/FTData/ft_det_cleanedup/updated_generic/train.json', type=str)
-    parser.add_argument('--valid_json_file', default='/media/yingges/Data/201910/FT/FTData/ft_det_cleanedup/updated_generic/valid.json', type=str)
-    parser.add_argument('--valid_size_thr', default=625, type=int)
-    parser.add_argument('--valid_ratio', default=0.15, help='The ratio of validation files.', type=float)
+    parser = argparse.ArgumentParser("""Convert FT detection data to COCO format. 
+                                        For ease of tracking we store the class_name/class_id list/dictionary in the code.
+                                        So please look them up in the code before using this script 
+                                        and change it according to your needs.""")
+    parser.add_argument('--input_path', type=str,
+                                        help="""Root of the data directory. 
+                                        e.g. The folder that contains "images" and "labels" folders. """)
+    parser.add_argument('--train_json_file', type=str,
+                                             help="""Specify a path like "{{PATH}}/train.json". 
+                                             This script itself doesn't create the folders so you need to create them yourself.""")
+    parser.add_argument('--valid_json_file', type=str,
+                                             help="""Specify a path like "{{PATH}}/valid.json". 
+                                             This script itself doesn't create the folders so you need to create them yourself.""")
+    parser.add_argument('--valid_size_thr', default=625, type=int, 
+                                            help="""Any annotation that has an area smaller than this value will be ignored. 
+                                            Set it to 0 to turn it off. This only applies to test set.""")
+    parser.add_argument('--valid_ratio', default=0.15, type=float, 
+                                         help="""The ratio of validation files. This also specify this script\'s behavior. e.g. 
+                                         If this value is set to 1 or 0 
+                                         then only the validation or train json file will be created respectively.""")
     parser.add_argument('--finegrained_cls', default=False, action='store_true')
+    parser.add_argument('--subfolders', action='store_true', 
+                                        help="""Indicates if the input path contains subfolders 
+                                        and each subfolder has its own "images", "labels" folders.
+                                        Since we only care about the merged data files structure, 
+                                        you can safely ignore this for now.""")
     return parser.parse_args()
 
 if __name__ == '__main__':
@@ -211,8 +245,10 @@ if __name__ == '__main__':
         categories = get_categories(data_map)
     else:
         # categories = PRE_DEFINE_CATEGORIES if args.finegrained_cls else PRE_DEFINE_CATEGORIES_GENERIC
-        categories = PRE_DEFINE_CATEGORIES_GENERIC_UPDATED
-        categories_test = PRE_DEFINE_CATEGORIES_GENERIC_UPDATED_TEST
+        # categories = PRE_DEFINE_CATEGORIES_GENERIC_UPDATED
+        # categories_test = PRE_DEFINE_CATEGORIES_GENERIC_UPDATED_TEST
+        categories = PRE_DEFINE_CATEGORIES
+        categories_test = PRE_DEFINE_CATEGORIES
 
     irre_data_cnt = 0
     bad_image_data = 0 

@@ -181,13 +181,24 @@ def convert(ft_files, json_file):
 
 if __name__ == '__main__':
     import argparse
-
     cur_file_path = os.path.abspath(os.path.dirname(__file__))
-    parser = argparse.ArgumentParser('')
-    parser.add_argument('--ft_dir', default='/home/neut/Desktop/yingges/201911/data/yunxikeji-01-2019-10-21', type=str)
-    parser.add_argument('--train_json_file', default='/home/neut/Desktop/yingges/201911/data/yunxikeji-01-2019-10-21/train.json', type=str)
-    parser.add_argument('--valid_json_file', default='/home/neut/Desktop/yingges/201911/data/yunxikeji-01-2019-10-21/valid.json', type=str)
-    parser.add_argument('--valid_ratio', default=1, type=float)
+    parser = argparse.ArgumentParser("""Convert FT segmentation data to COCO format. 
+                                        For ease of tracking we store the class_name/class_id list/dictionary in the code.
+                                        So please look them up in the code before using this script 
+                                        and change it according to your needs.""")
+    parser.add_argument('--ft_dir', type=str,
+                                    help="""Root of the data directory. 
+                                    e.g. The folder that contains "images" and "labels" folders. """)
+    parser.add_argument('--train_json_file', type=str,
+                                             help="""Specify a path like "{{PATH}}/train.json". 
+                                             This script itself doesn't create the folders so you need to create them yourself.""")
+    parser.add_argument('--valid_json_file', type=str,
+                                             help="""Specify a path like "{{PATH}}/valid.json". 
+                                             This script itself doesn't create the folders so you need to create them yourself.""")
+    parser.add_argument('--valid_ratio', default=0.15, type=float, 
+                                         help="""The ratio of validation files. This also specify this script\'s behavior. e.g. 
+                                         If this value is set to 1 or 0 
+                                         then only the validation or train json file will be created respectively.""")
     args = parser.parse_args()
 
     # add os.path.dirname(os.path.abspath(__file__)), 
