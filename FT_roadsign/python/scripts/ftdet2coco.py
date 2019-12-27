@@ -172,6 +172,7 @@ def convert(data_map, data_map_keys, out_file, categories, set_type, finegrained
     for key in data_map_keys:
         print('{}/{} finished...'.format(img_id, len(data_map_keys)))
         json_dict = json.load(open(data_map[key][1]))
+        # TODO: Put all data check here
         bad_res = detect_bad_data(json_dict, categories, finegrained_cls)
         if bad_res:
             # print(bad_res)
@@ -217,10 +218,10 @@ def parse_args():
                                         help="""Root of the data directory. 
                                         e.g. The folder that contains "images" and "labels" folders. """)
     parser.add_argument('--train_json_file', type=str,
-                                             help="""Specify a path like "{{PATH}}/train.json". 
+                                             help="""Specify a path like "{PATH}/train.json". 
                                              This script itself doesn't create the folders so you need to create them yourself.""")
     parser.add_argument('--valid_json_file', type=str,
-                                             help="""Specify a path like "{{PATH}}/valid.json". 
+                                             help="""Specify a path like "{PATH}/valid.json". 
                                              This script itself doesn't create the folders so you need to create them yourself.""")
     parser.add_argument('--valid_size_thr', default=625, type=int, 
                                             help="""Any annotation that has an area smaller than this value will be ignored. 

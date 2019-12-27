@@ -43,11 +43,43 @@ def evaluate(annFile, resFile, annType, per_cls_stat=False):
     for idx, cls_ in enumerate(cats):
         print('{} mAP@.5: {:0.3f}'.format(cats[idx]['name'], res[idx]))
 
-def evaluate_curve(annFile, resFile, annType, score_thr=0.2, split=10):
+def evaluate_curve(annFile, resFile, annType, score_thr, split=10):
     cocoGt = COCO(annFile)
     cocoDt = cocoGt.loadRes(resFile)
     anns = cocoDt.dataset['annotations']
     anns = [ann for ann in anns if ann['score'] >= score_thr]
+
+    cocoDt.dataset['annotations'] = anns
+    cocoDt.createIndex()
+    cocoEval = COCOeval(cocoGt,cocoDt,annType)
+    cocoEval.evaluate()
+    # maxDet = -1 # turn off maxDet
+    maxDet = 1000
+    K0 = len(cocoEval.params.catIds)
+    A0 = len(cocoEval._paramsEval.areaRng)
+    I0 = len(cocoEval._paramsEval.imgIds)
+    E = [cocoEval.evalImgs[k * A0 * I0 + a * I0 + i] 
+                    for i in range(I0)
+                    for a in [0]
+                    for k in range(K0)]
+    E = [e for e in E if not e is None]
+    dtScores = np.concatenate([e['dtScores'][0:maxDet] for e in E])
+    inds = np.argsort(-dtScores, kind='mergesort')
+    dtm  = np.concatenate([e['dtMatches'][:,0:maxDet] for e in E], axis=1)[:,inds]
+    dtIg = np.concatenate([e['dtIgnore'][:,0:maxDet]  for e in E], axis=1)[:,inds]
+    gtIg = np.concatenate([e['gtIgnore'] for e in E])
+    npig = np.count_nonzero(gtIg==0)
+
+    tps = np.logical_and(               dtm,  np.logical_not(dtIg) )
+    fps = np.logical_and(np.logical_not(dtm), np.logical_not(dtIg) )
+    tp_sum = np.cumsum(tps, axis=1).astype(dtype=np.float)
+    fp_sum = np.cumsum(fps, axis=1).astype(dtype=np.float)
+    tp_sum_50 = np.array(tp_sum[0])
+    fp_sum_50 = np.array(fp_sum[0])
+    rc = tp_sum_50 / npig
+    pr = tp_sum_50 / (fp_sum_50+tp_sum_50+np.spacing(1))
+    for i in range(0, len(rc), int(len(rc) / split)):
+        print('ACC: {:.3f}, RECALL: {:.3f}'.format(pr[i], rc[i]))
 
     # cocoDt = cocoGt.loadRes(anns)
     # cocoEval = COCOeval(cocoGt,cocoDt,annType)
@@ -67,48 +99,32 @@ def evaluate_curve(annFile, resFile, annType, score_thr=0.2, split=10):
     # plt.plot(x, prs)
     # plt.show()
 
-    anns = sorted(anns, key=lambda ann: -ann['score'])
-    n = int(len(anns) / split) # chunk length
-    anns_chunks = [anns[0:i + n] for i in range(0, len(anns), n)]
-    num_gt = len(cocoGt.anns)
-    output = []
-    for chunk in anns_chunks:
-        tmp_json_dict = {'images': copy.deepcopy(cocoGt.dataset['images']),
-                         'categories':  copy.deepcopy(cocoGt.dataset['categories']),
-                         'annotations': chunk}
-        with open('tmp.json', 'w') as outfile:
-            json.dump(tmp_json_dict, outfile)
-        cocoDt = COCO('tmp.json')
-        cocoDt.dataset['annotations'] = chunk
-        cocoDt.createIndex()
-        cocoEval = COCOeval(cocoGt,cocoDt,annType)
-        cocoEval.evaluate()
-
-        num_hit = 0
-        K0 = len(cocoEval.params.catIds)
-        A0 = len(cocoEval._paramsEval.areaRng)
-        I0 = len(cocoEval._paramsEval.imgIds)
-        res_list = [cocoEval.evalImgs[k * A0 * I0 + a * I0 + i] 
-                    for i in range(0, I0)
-                    for a in [1, 2, 3]
-                    for k in range(0, K0)]
-        res_list = [res for res in res_list if not res is None]
-        for res in res_list:
-            num_hit += np.count_nonzero(res['gtMatches'][0]) # .5 IOU hits
-        num_hit /= 3
-        output.append((num_hit / len(chunk), num_hit / num_gt))
-    for out in output:
-        print('ACC: {:.3f}, RECALL: {:.3f}'.format(out[0], out[1]))
-
-        # E = [e for e in cocoEval.evalImgs if not e is None]
-        # dtScores = np.concatenate([e['dtScores'][0:100] for e in E])
-        # inds = np.argsort(-dtScores, kind='mergesort')
-        # dtm  = np.concatenate([e['dtMatches'][:,0:100] for e in E], axis=1)[:,inds]
-        # dtIg = np.concatenate([e['dtIgnore'][:,0:100]  for e in E], axis=1)[:,inds]
-        # tps = np.logical_and(dtm, np.logical_not(dtIg))
-        # tp_sum = np.cumsum(tps, axis=1).astype(dtype=np.float)
-        # tp = tp_sum[0]
-        # print('ACC: {:.3f}, RECALL: {:.3f}'.format(tp / len(chunk), tp / num_gt))
+    # anns = sorted(anns, key=lambda ann: -ann['score'])
+    # n = int(len(anns) / split) # chunk length
+    # anns_chunks = [anns[0:i + n] for i in range(0, len(anns), n)]
+    # num_gt = len(cocoGt.anns)
+    # output = []
+    # for chunk in anns_chunks:
+    #     cocoDt.dataset['annotations'] = chunk
+    #     cocoDt.createIndex()
+    #     cocoEval = COCOeval(cocoGt,cocoDt,annType)
+    #     cocoEval.evaluate()
+    #     num_hit = 0
+    #     K0 = len(cocoEval.params.catIds)
+    #     A0 = len(cocoEval._paramsEval.areaRng)
+    #     I0 = len(cocoEval._paramsEval.imgIds)
+    #     res_list = [cocoEval.evalImgs[k * A0 * I0 + a * I0 + i] 
+    #                 for i in range(0, I0)
+    #                 # for a in [0] 
+    #                 for a in [1, 2, 3] 
+    #                 for k in range(0, K0)]
+    #     res_list = [res for res in res_list if not res is None]
+    #     # use dtScores to mask off different thres
+    #     for res in res_list:
+    #         num_hit += np.count_nonzero(np.logical_and(res['gtMatches'][0], np.logical_not(res['gtIgnore']))) # .5 IOU hits
+    #     output.append((num_hit / len(chunk), num_hit / num_gt))
+    # for out in output:
+    #     print('ACC: {:.3f}, RECALL: {:.3f}'.format(out[0], out[1]))
 
 def showBndbox(coco, anns, predefined_c=None):
     """
@@ -234,15 +250,26 @@ PREDEFINED_CLASSES = ['io', 'wo', 'ors', 'p10', 'p11',
                       'po', 'pl', 'pm']
 
 def main():
-    parser = argparse.ArgumentParser(description='')
-    parser.add_argument('--mode', default='eval', choices=['eval', 'viz', 'stats'])
+    parser = argparse.ArgumentParser(description="""For ease of tracking we store the class_name/class_id list/dictionary in the code.
+                                     So please look them up in the code before using this script and change it according to your needs. 
+                                     It's particularly important to match the index/id of the classes between the code and the files to 
+                                     obtain a correct result.""")
+    parser.add_argument('--mode', default='eval', choices=['eval', 'viz', 'stats'],
+                                  help='Behavior of different modes to be added here.')
     parser.add_argument('--ann_type', default='bbox', choices=['segm','bbox','keypoints'])
-    parser.add_argument('--anno_file_path', type=str)
-    parser.add_argument('--img_folder_path',type=str)
-    parser.add_argument('--res_file_path', type=str)
+    parser.add_argument('--anno_file_path', type=str, 
+                                            help='Path to a COCO format annotation json file.')
+    parser.add_argument('--img_folder_path',type=str,
+                                            help='Path to the folder that holds corresponding images.')
+    parser.add_argument('--res_file_path', type=str,
+                                           help='Path to a json file that stores model outputs.')
     parser.add_argument('--per_cls_stat', action='store_true')
-    parser.add_argument('--map_curve', default=False, action='store_true')
-    parser.add_argument('--score_thr', default=0, help='This only works when evaluating the global average precision.', type=float)
+    parser.add_argument('--map_curve', default=False, action='store_true', 
+                                       help="""This parameter dictates the behavior of the evaluation process. 
+                                       When this is set to true the script will calculate a 10 split global mAP curve.
+                                       When this is left empty it will use standard COCO interfaces to perform COCO evaluation.""")
+    parser.add_argument('--score_thr', default=0.2, type=float,
+                                       help='This only applies to global average precision calculation.')
     parser.add_argument('--finegrained_cls', default=False, action='store_true')
     parser.add_argument('--output_save_path', type=str)
     args = parser.parse_args()

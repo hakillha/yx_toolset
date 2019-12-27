@@ -190,10 +190,10 @@ if __name__ == '__main__':
                                     help="""Root of the data directory. 
                                     e.g. The folder that contains "images" and "labels" folders. """)
     parser.add_argument('--train_json_file', type=str,
-                                             help="""Specify a path like "{{PATH}}/train.json". 
+                                             help="""Specify a path like "{PATH}/train.json". 
                                              This script itself doesn't create the folders so you need to create them yourself.""")
     parser.add_argument('--valid_json_file', type=str,
-                                             help="""Specify a path like "{{PATH}}/valid.json". 
+                                             help="""Specify a path like "{PATH}/valid.json". 
                                              This script itself doesn't create the folders so you need to create them yourself.""")
     parser.add_argument('--valid_ratio', default=0.15, type=float, 
                                          help="""The ratio of validation files. This also specify this script\'s behavior. e.g. 
