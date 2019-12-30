@@ -3,7 +3,7 @@
   <component name="NewModuleRootManager">
     <content url="file://$USER_HOME$/anaconda2/envs/coco/lib/python2.7/site-packages/pycocotools" />
     <content url="file://$MODULE_DIR$" />
-    <orderEntry type="jdk" jdkName="Python 3.6 (coco)" jdkType="Python SDK" />
+    <orderEntry type="jdk" jdkName="Python 2.7 (yx_toolset)" jdkType="Python SDK" />
     <orderEntry type="sourceFolder" forTests="false" />
     <orderEntry type="module" module-name="pycocotools" />
     <orderEntry type="module" module-name="pycocotools" />

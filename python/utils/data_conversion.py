@@ -3,6 +3,7 @@ import math
 import os
 import random
 
+from collections import defaultdict
 from glob import glob
 from os.path import join as pj
 
@@ -20,18 +21,26 @@ def parse_folder_ft_det(input_path, subfolders, valid_ratio):
 
     Args:
 
-
     Returns:
         res_dict: {data_key: [abs_img_path, abs_label_path], ...}
-
+        shuffled_list: list of keys from above dict but shuffled to index it 
     """
-    if subfolders:
-        folder_list = [item for item in os.listdir(input_path) if os.path.isdir(pj(input_path, item))]
+    if subfolders or isinstance(input_path, list):
+        if subfolders:
+            folder_list = [item for item in os.listdir(input_path) if os.path.isdir(pj(input_path, item))]
+        elif isinstance(input_path, list):
+            folder_list = input_path
         img_list = []
         anno_list = []
         for folder in folder_list:
-            img_list += glob(pj(input_path, folder, 'images', '*')) # TODO: file type check
-            anno_list += glob(pj(input_path, folder, 'labels', '*'))
+            if isinstance(input_path, list):
+                img_list += glob(pj(folder, 'images', '*'))
+                anno_list += glob(pj(folder, 'labels', '*'))
+            else:
+                img_list += glob(pj(input_path, folder, 'images', '*')) # TODO: file type check
+                anno_list += glob(pj(input_path, folder, 'labels', '*'))
+            # img_list += glob(pj(input_path, folder, 'images', '*')) # TODO: file type check
+            # anno_list += glob(pj(input_path, folder, 'labels', '*'))
     else:
         img_list = glob(pj(input_path, 'images', '*'))
         anno_list = glob(pj(input_path, 'labels', '*'))
@@ -51,6 +60,29 @@ def parse_folder_ft_det(input_path, subfolders, valid_ratio):
     train_size = int(math.floor(len(shuffled_list) * (1 - float(valid_ratio))))
 
     return res_dict, shuffled_list, train_size
+
+def parse_cats_from_annos(data_map):
+    cats = []
+    cats_cnt = defaultdict(int)
+    for k, v in data_map.items():
+        with open(v[1]) as ann_file:
+            json_dict = json.load(ann_file)
+            if 'object' in json_dict['outputs'].keys():
+                for obj in json_dict['outputs']['object']:
+                    try:
+                        cls_name = str(obj['name'])
+                    except:
+                        continue
+                    cats_cnt[cls_name] += 1
+    cats = cats_cnt.keys()
+    cats.sort()
+    cats_print = [(cat, cats_cnt[cat]) for cat in cats]
+    print(cats)
+    print(cats_print)
+    ret = dict()
+    for idx, cat in enumerate(cats):
+        ret[cat] = idx + 1
+    return ret
 
 def find_det_parent_class(in_cls, finegrained_cls):
     if finegrained_cls:

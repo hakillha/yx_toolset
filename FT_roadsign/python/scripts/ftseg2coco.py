@@ -29,8 +29,8 @@ illegal_anno_cnt = 0
 def get_categories(ft_files):
     classes_names = set()
     for filename in ft_files:
-        file = open(filename)
-        json_dict = json.load(file)
+        with open(filename) as file:
+            json_dict = json.load(file)
         for top_tuple in json_dict.keys():
 
             if top_tuple == 'outputs':
@@ -155,8 +155,8 @@ def convert(ft_files, json_file):
     img_id = 1
     anno_id = 1
     for fname in ft_files:
-        file = open(fname)
-        json_dict = json.load(file)
+        with open(fname) as file:
+            json_dict = json.load(file)
         for top_tuple in json_dict.keys():
 
             if top_tuple == 'outputs':
@@ -175,9 +175,8 @@ def convert(ft_files, json_file):
     # sort it in the out dict
     out_json_dict['categories'].sort(key=lambda val: val['id'])
 
-    out_file = open(json_file, 'w')
-    out_file.write(json.dumps(out_json_dict))
-    out_file.close()
+    with open(json_file, 'w') as out_file:
+        out_file.write(json.dumps(out_json_dict))
 
 if __name__ == '__main__':
     import argparse

@@ -58,28 +58,29 @@ def evaluate_curve(annFile, resFile, annType, score_thr, split=10):
     K0 = len(cocoEval.params.catIds)
     A0 = len(cocoEval._paramsEval.areaRng)
     I0 = len(cocoEval._paramsEval.imgIds)
-    E = [cocoEval.evalImgs[k * A0 * I0 + a * I0 + i] 
-                    for i in range(I0)
-                    for a in [0]
-                    for k in range(K0)]
-    E = [e for e in E if not e is None]
-    dtScores = np.concatenate([e['dtScores'][0:maxDet] for e in E])
-    inds = np.argsort(-dtScores, kind='mergesort')
-    dtm  = np.concatenate([e['dtMatches'][:,0:maxDet] for e in E], axis=1)[:,inds]
-    dtIg = np.concatenate([e['dtIgnore'][:,0:maxDet]  for e in E], axis=1)[:,inds]
-    gtIg = np.concatenate([e['gtIgnore'] for e in E])
-    npig = np.count_nonzero(gtIg==0)
+    for k in range(K0):
+        E = [cocoEval.evalImgs[k * A0 * I0 + a * I0 + i] 
+                        for i in range(I0)
+                        for a in [0]]
+        E = [e for e in E if not e is None]
+        dtScores = np.concatenate([e['dtScores'][0:maxDet] for e in E])
+        inds = np.argsort(-dtScores, kind='mergesort')
+        dtm  = np.concatenate([e['dtMatches'][:,0:maxDet] for e in E], axis=1)[:,inds]
+        dtIg = np.concatenate([e['dtIgnore'][:,0:maxDet]  for e in E], axis=1)[:,inds]
+        gtIg = np.concatenate([e['gtIgnore'] for e in E])
+        npig = np.count_nonzero(gtIg==0)
 
-    tps = np.logical_and(               dtm,  np.logical_not(dtIg) )
-    fps = np.logical_and(np.logical_not(dtm), np.logical_not(dtIg) )
-    tp_sum = np.cumsum(tps, axis=1).astype(dtype=np.float)
-    fp_sum = np.cumsum(fps, axis=1).astype(dtype=np.float)
-    tp_sum_50 = np.array(tp_sum[0])
-    fp_sum_50 = np.array(fp_sum[0])
-    rc = tp_sum_50 / npig
-    pr = tp_sum_50 / (fp_sum_50+tp_sum_50+np.spacing(1))
-    for i in range(0, len(rc), int(len(rc) / split)):
-        print('ACC: {:.3f}, RECALL: {:.3f}'.format(pr[i], rc[i]))
+        tps = np.logical_and(               dtm,  np.logical_not(dtIg) )
+        fps = np.logical_and(np.logical_not(dtm), np.logical_not(dtIg) )
+        tp_sum = np.cumsum(tps, axis=1).astype(dtype=np.float)
+        fp_sum = np.cumsum(fps, axis=1).astype(dtype=np.float)
+        tp_sum_50 = np.array(tp_sum[0])
+        fp_sum_50 = np.array(fp_sum[0])
+        rc = tp_sum_50 / npig
+        pr = tp_sum_50 / (fp_sum_50+tp_sum_50+np.spacing(1))
+        print(cocoGt.loadCats(k+1)[0]['name'])
+        for i in range(0, len(rc), int(len(rc) / split)):
+            print('ACC: {:.3f}, RECALL: {:.3f}'.format(pr[i], rc[i]))
 
     # cocoDt = cocoGt.loadRes(anns)
     # cocoEval = COCOeval(cocoGt,cocoDt,annType)
@@ -212,27 +213,34 @@ def coco_format_viz(img_folder, annFile, annType, resFile=None, res_score_thr=0.
     #     plt.show()
     #     plt.close()
 
-def data_stats(annFile, categories):
+def parse_categories(categories):
+    ret_cats = []
+    for cat in categories:
+        ret_cats.append((cat['id'], cat['name']))
+    sorted(ret_cats, key=lambda x: x[0])
+    return ret_cats
+
+def data_stats(annFile, categories=None):
     with open(annFile) as file:
         json_dict = json.load(file)
     # Collect stats on the shorter side of the bbs
     size_list = []
     cls_cnt = defaultdict(int)
-    for ann in json_dict['annotations']:
-        cls_name = categories[ann['category_id'] - 1]
-        size_list.append(min(ann['bbox'][2], ann['bbox'][3]))
-        # if cls_name in ['rn', 'ro', 'lo', 'ors']:
-        #     cls_name = 'panel'
-        # elif cls_name.startswith('p'):
-        if cls_name.startswith('p'):
-            cls_name = 'po'
-        cls_cnt[cls_name] += 1
+    if categories == None:
+        categories = parse_categories(json_dict['categories'])
+    print(categories)
     total_sample_cnt = 0
-    for k, v in cls_cnt.items():
-        total_sample_cnt += v
+    for ann in json_dict['annotations']:
+        cls_name = categories[ann['category_id'] - 1][1]
+        size_list.append(min(ann['bbox'][2], ann['bbox'][3]))
+        # if cls_name.startswith('p'):
+        #     cls_name = 'po'
+        cls_cnt[cls_name] += 1
+        total_sample_cnt += 1
     cls_percent = dict()
     for k, v in cls_cnt.items():
         cls_percent[k] = v / total_sample_cnt
+    print('Total # of samples: {}'.format(total_sample_cnt))
     print(cls_cnt)
     print(cls_percent)
     plt.hist(size_list, bins=20)
@@ -255,7 +263,8 @@ def main():
                                      It's particularly important to match the index/id of the classes between the code and the files to 
                                      obtain a correct result.""")
     parser.add_argument('--mode', default='eval', choices=['eval', 'viz', 'stats'],
-                                  help='Behavior of different modes to be added here.')
+                                  help="""Behavior of different modes to be added here.
+                                  'stats' mode requires [--anno_file_path].""")
     parser.add_argument('--ann_type', default='bbox', choices=['segm','bbox','keypoints'])
     parser.add_argument('--anno_file_path', type=str, 
                                             help='Path to a COCO format annotation json file.')
@@ -285,7 +294,7 @@ def main():
             evaluate(args.anno_file_path, args.res_file_path, args.ann_type, args.per_cls_stat)
         data_stats(args.anno_file_path, categories)
     elif args.mode =='stats':
-        data_stats(args.anno_file_path, categories)
+        data_stats(args.anno_file_path)
 
 if __name__ == '__main__':
     main()
