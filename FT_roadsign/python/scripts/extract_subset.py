@@ -18,8 +18,11 @@ def extract_subset(folder_path, output_path, size=100):
 def extract_splitset(json_file, data_path, output_path):
     json_dict = json.load(open(json_file))
     for im in json_dict['images']:
-        shutil.copy(pj(data_path, 'images', im['file_name']), pj(output_path, 'images'))
-        shutil.copy(pj(data_path, 'labels', im['file_name'].split('.')[0] + '.json'), pj(output_path, 'labels'))
+        try:
+            shutil.copy(pj(data_path, 'images', im['file_name']), pj(output_path, 'images'))
+            shutil.copy(pj(data_path, 'labels', im['file_name'].split('.')[0] + '.json'), pj(output_path, 'labels'))
+        except IOError as err_msg:
+            print(err_msg)
 
 if __name__ == '__main__':
     # extract_subset('/home/neut/Desktop/yingges/201911/data/yunxikeji-01-2019-10-21',
@@ -28,6 +31,9 @@ if __name__ == '__main__':
     # extract_splitset('/media/yingges/Data/201910/FT/FTData/ft_det_cleanedup/ignore_toosmall/11_30/valid.json',
     #                  '/media/yingges/Data/201910/FT/FTData/ft_od1_merged',
     #                  '/media/yingges/Data/201910/FT/FTData/ft_det_cleanedup/ignore_toosmall/11_30/og_files')
-    extract_splitset('/media/yingges/Data/201910/FT/FTData/ft_det_cleanedup/updated_generic/valid.json',
-                     '/media/yingges/Data/201910/FT/FTData/ft_det_cleanedup',
-                     '/media/yingges/Data/201910/FT/FTData/ft_det_cleanedup/updated_generic')
+    # extract_splitset('/media/yingges/Data/201910/FT/FTData/ft_det_cleanedup/updated_generic/valid.json',
+    #                  '/media/yingges/Data/201910/FT/FTData/ft_det_cleanedup',
+    #                  '/media/yingges/Data/201910/FT/FTData/ft_det_cleanedup/updated_generic')
+    extract_splitset('/media/yingges/Data/201910/FT/FTData/yunxikeji-01-2019-10-21/0102/train.json',
+                     '/media/yingges/Data/201910/FT/FTData/yunxikeji-01-2019-10-21',
+                     '/media/yingges/Data/201910/FT/FTData/yunxikeji-01-2019-10-21/0102/train')

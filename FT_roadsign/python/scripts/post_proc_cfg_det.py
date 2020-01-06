@@ -29,6 +29,38 @@ exclude_p = dict(
 # 	ignore_number=True,
 # 	sign_with_value=['pl', 'pm', 'ph'])
 
+include_merged_p = dict(
+	strip_space=True,
+	irre_cls_list=[' ', ' z', 'ERROR', 'back', 'back ', 
+					'cbtl', 'cbtl ', 'cgtl', 'cgtl ', 'crth',
+					'crtl', 'cytl', 'cytl ', 'lanebtl', 'lanegtl',
+					'lanertl', 'laneytl', 'lgtl', 'lrtl', 'lytl',
+					'lytl ', 'otl', 'rgtl', 'rgtls', 'rytl',
+					'sgtl', 'sgtls', 'srtl', 'sytl', 'tas',
+					'trtl', 'tytl', 'bak'],
+	i_cls_include_list=['i1', 'i1 ', 'i10', 'i10 ', 'i11', 
+						'i12', 'i13', 'i13 ', 'i14', 'i15', 
+						'i2', 'i2 ', 'i3', 'i4', 'i4s', 
+						'i5', 'i6', 'i9', 'il', 'il100', 
+						'il3 0', 'il30', 'il40', 'il50', 'il60', 
+						'il70', 'il80', 'il90', 'io', 'io ', 
+						'ip', 'ip '],
+	w_cls_include_list=['w1', 'w10', 'w11', 'w12', 'w13', 
+						'w16', 'w16 ', 'w18', 'w19', 'w20', 
+						'w21', 'w22', 'w22 ', 'w22r', 'w3', 
+						'w3 ', 'w30', 'w32', 'w32 ', 'w32r', 
+						'w32s', 'w34', 'w35', 'w38', 'w41', 
+						'w42', 'w43', 'w45', 'w47', 'w55', 
+						'w57', 'w57 ', 'w59', 'w63', 'w66', 
+						'w8', 'w9', 'wo', 'wo ', 'w24', 'w37'],
+	panel_cls_list=['lo', 'lo ', 'ors', 'ors ', 'rn', 
+					'rn ', 'ro'],
+	ignore_number=True,
+	sign_merge_list=['pl', 'pm', 'ph', 'pa', 'pw'],
+	p_cls_include_list=['p10', 'p11', 'p19', 'p20', 'p23',
+						'p26', 'p5', 'pg', 'pn', 'pne', 
+						'ps', 'ph', 'pl', 'pm', 'po'])
+
 p_finegrained = dict(
 	strip_space=True,
 	ignore_number=True,

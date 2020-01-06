@@ -64,8 +64,12 @@ def parse_folder_ft_det(input_path, subfolders, valid_ratio):
 def parse_cats_from_annos(data_map):
     cats = []
     cats_cnt = defaultdict(int)
-    for k, v in data_map.items():
-        with open(v[1]) as ann_file:
+    if isinstance(data_map, dict):
+        data_map = [v[1] for k, v in data_map.items()]
+    # for k, v in data_map.items():
+        # with open(v[1]) as ann_file:
+    for f in data_map:
+        with open(f) as ann_file:
             json_dict = json.load(ann_file)
             if 'object' in json_dict['outputs'].keys():
                 for obj in json_dict['outputs']['object']:

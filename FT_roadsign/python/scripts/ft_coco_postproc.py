@@ -4,14 +4,14 @@ import json
 from collections import defaultdict
 from pycocotools.coco import COCO
 
-import post_proc_cfg
+import post_proc_cfg_det, post_proc_cfg_seg
 
 def cls_filter(cat_name, filter_rule):
     # add a new class selection routine by adding a new
     # "if filter_rule == '...':" branch and a new cfg dict in 
     # the 'post_proc_cfg' file
     if filter_rule == 'exclude_p':
-        cfg = post_proc_cfg.exclude_p
+        cfg = post_proc_cfg_det.exclude_p
         if cat_name in cfg['irre_cls_list'] or (cat_name.startswith('p') and cat_name != 'panel'):
             return None
         if cfg['strip_space']:
@@ -26,8 +26,36 @@ def cls_filter(cat_name, filter_rule):
         if cat_name in cfg['w_cls_include_list']:
             cat_name = 'w'
 
+    if filter_rule == 'include_merged_p':
+        cfg = post_proc_cfg_det.include_merged_p
+        if cat_name in cfg['irre_cls_list']:
+            return None
+        if cfg['strip_space']:
+            cat_name = cat_name.strip()
+        # the following lines would also remove the space
+        # so be careful with the logic flow here
+        if cat_name in cfg['panel_cls_list']:
+            cat_name = 'panel'
+
+        if cat_name in cfg['i_cls_include_list']:
+            cat_name = 'i'
+        if cat_name in cfg['w_cls_include_list']:
+            cat_name = 'w'
+
+        if cfg['ignore_number']:
+            for pre in cfg['sign_merge_list']:
+                if cat_name.startswith(pre) and cat_name != 'panel':
+                    cat_name = pre
+        if cat_name.startswith('p') and cat_name != 'panel' and cat_name not in cfg['p_cls_include_list']:
+            return None
+        if cat_name in cfg['p_cls_include_list']:
+            cat_name = 'p'
+
+        if cat_name in ['sc0', 'sc1']:
+            cat_name = 'sc'
+
     if filter_rule == 'p_finegrained':
-        cfg = post_proc_cfg.p_finegrained
+        cfg = post_proc_cfg_det.p_finegrained
         if cfg['strip_space']:
             cat_name = cat_name.strip()
         if not cat_name.startswith('p') or cat_name == 'panel':
@@ -39,6 +67,11 @@ def cls_filter(cat_name, filter_rule):
                 if cat_name.startswith(pre):
                     cat_name = pre
         if cat_name not in cfg['p_cls_include_list']:
+            return None
+
+    if filter_rule == 'seg_a':
+        cfg = post_proc_cfg_seg.seg_a
+        if not cat_name in cfg['include_list']:
             return None
     return cat_name
 
@@ -118,17 +151,22 @@ def parse_args():
     parser.add_argument('--train_coco_file')
     parser.add_argument('--test_coco_file')
     parser.add_argument('--filter_rule')
-    parser.add_argument('--test_ratio', default=0.25)
-    parser.add_argument('--eval_stats')
+    parser.add_argument('--test_ratio', default=0.25, type=float)
+    parser.add_argument('--eval_stats', action='store_true')
     return parser.parse_args()
 
 if __name__ == '__main__':
     args = parse_args()
     args.input_coco_file = '/media/yingges/Data_Junior/data/ft_pic/super_ensemble.json'
-    args.train_coco_file = '/media/yingges/Data_Junior/data/ft_pic/p_finegrained/train.json'
-    args.test_coco_file = '/media/yingges/Data_Junior/data/ft_pic/p_finegrained/test.json'
+    args.train_coco_file = '/media/yingges/Data_Junior/data/ft_pic/test/train.json'
+    args.test_coco_file = '/media/yingges/Data_Junior/data/ft_pic/test/test.json'
+    # args.input_coco_file = '/media/yingges/Data/201910/FT/FTData/yunxikeji-01-2019-10-21/0102/ensemble.json'
+    # args.train_coco_file = '/media/yingges/Data/201910/FT/FTData/yunxikeji-01-2019-10-21/0102/train.json'
+    # args.test_coco_file = '/media/yingges/Data/201910/FT/FTData/yunxikeji-01-2019-10-21/0102/test.json'
     # args.filter_rule = 'exclude_p'
     args.filter_rule = 'p_finegrained'
+    # args.filter_rule = 'include_merged_p'
+    # args.filter_rule = 'seg_a'
 
     post_proc(args.input_coco_file,
               args.filter_rule,

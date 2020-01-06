@@ -9,8 +9,13 @@ import math
 import os
 import random
 import re
+import sys
 
 from os.path import join as pj
+
+cur_path = os.path.abspath(os.path.dirname(__file__))
+sys.path.insert(0, pj(cur_path, '..', '..', '..', '..'))
+from yx_toolset.python.utils.data_conversion import parse_cats_from_annos
 
 # PRE_DEFINE_CATEGORIES = None
 # PRE_DEFINE_CATEGORIES = {'roa': 1, 'loa': 2, 'soa': 3, 'sloa': 4, 'sroa': 5,
@@ -118,6 +123,7 @@ def write_one_image(json_dict, out_json_dict, categories, anno_id, full_fname, i
                 'iscrowd': 0,
                 'image_id': img_id,
                 'category_id': cate_id,
+                'category_name': anno['name'],
                 'id': anno_id,
                 'ignore': 0,
                 'segmentation': [point_set],
@@ -144,13 +150,13 @@ def write_one_image(json_dict, out_json_dict, categories, anno_id, full_fname, i
 
     return  img_id, anno_id
 
-def convert(ft_files, json_file):
+def convert(ft_files, json_file, categories=None):
     # check for filename in the image folder?
     out_json_dict = {'images': [], 'type': 'instances', 'annotations': [], 'categories': []}
-    if PRE_DEFINE_CATEGORIES is not None:
+    if categories is not None:
         categories = PRE_DEFINE_CATEGORIES
-    else:
-        categories = get_categories(ft_files)
+    # else:
+    #     categories = get_categories(ft_files)
 
     img_id = 1
     anno_id = 1
@@ -167,7 +173,6 @@ def convert(ft_files, json_file):
                         ret = write_one_image(json_dict, out_json_dict, categories, anno_id, fname, img_id)
                         if ret:
                             img_id, anno_id = ret
-
 
     for cate, cid in categories.items():
         cate_entry = {'supercategory': 'none', 'id': cid, 'name': cate}
@@ -198,6 +203,9 @@ if __name__ == '__main__':
                                          help="""The ratio of validation files. This also specify this script\'s behavior. e.g. 
                                          If this value is set to 1 or 0 
                                          then only the validation or train json file will be created respectively.""")
+    parser.add_argument('--parse_cats_from_annos', default=True, type=bool, 
+                                               help="""If set to true the class dictionary will be parsed
+                                               from the annotation files.""")
     args = parser.parse_args()
 
     # add os.path.dirname(os.path.abspath(__file__)), 
@@ -205,11 +213,14 @@ if __name__ == '__main__':
     ftfilelist = [pj(args.ft_dir, 'labels', item) for item in os.listdir(pj(args.ft_dir, 'labels')) if item.endswith('.json')]
     random.shuffle(ftfilelist)
     train_size = int(math.floor(len(ftfilelist) * (1 - args.valid_ratio)))
+    if parse_cats_from_annos:
+        categories = parse_cats_from_annos(ftfilelist)
+        categories_test = categories
     if args.valid_ratio == 1:
-        convert(ftfilelist, args.valid_json_file)
+        convert(ftfilelist, args.valid_json_file, categories_test)
     else:
-        convert(ftfilelist[:train_size], args.train_json_file)
-        convert(ftfilelist[train_size:], args.valid_json_file)
+        convert(ftfilelist[:train_size], args.train_json_file, categories)
+        convert(ftfilelist[train_size:], args.valid_json_file, categories_test)
     global broken_f_cnt, illegal_anno_cnt
     print('# of broken images: ' + str(broken_f_cnt))
     print('# of illegal segmentation annotations: ' + str(illegal_anno_cnt))
