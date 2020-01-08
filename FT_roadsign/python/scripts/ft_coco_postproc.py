@@ -99,7 +99,21 @@ def ann_stats(ann_list):
     print(class_cnt)
     return class_list, class_cnt, img_id_list
 
-def post_proc(input_coco_file, filter_rule, train_coco_file, test_coco_file, test_ratio, eval_stats):
+def size_thres_check(ann, size_thres, thres_style):
+    if thres_style == 'area':
+        if ann['area'] < size_thres * size_thres:
+            return False
+        else:
+            return True
+
+def post_proc(input_coco_file, 
+              filter_rule, 
+              train_coco_file, 
+              test_coco_file, 
+              test_ratio, 
+              eval_stats, 
+              test_size_thres,
+              size_thres_style):
     train_json_dict = {'images': [], 'type': 'instances', 'annotations':[], 'categories':[]}
     test_json_dict = {'images': [], 'type': 'instances', 'annotations':[], 'categories':[]}
     in_coco_ds = COCO(input_coco_file)
@@ -128,21 +142,33 @@ def post_proc(input_coco_file, filter_rule, train_coco_file, test_coco_file, tes
     test_img_info = in_coco_ds.loadImgs(img_id_list[num_train:])
     # update ann field in coco datasets so we can extract them with coco interface
     in_coco_ds.dataset['annotations'] = new_ann_list
+    # set up the mapping between the imgs and the new anns set
     in_coco_ds.createIndex()
     train_anns = in_coco_ds.loadAnns(in_coco_ds.getAnnIds(imgIds=img_id_list[:num_train]))
     test_anns = in_coco_ds.loadAnns(in_coco_ds.getAnnIds(imgIds=img_id_list[num_train:]))
-    # ann_stats(train_anns)
-    # ann_stats(test_anns)
-    # if eval_stats:
-    #     return
+    if test_size_thres > 0 :
+        filtered_test_anns = []
+        for ann in test_anns:
+            if size_thres_check(ann, test_size_thres, size_thres_style):
+                filtered_test_anns.append(ann)
+        test_anns = filtered_test_anns
+        test_img_ids = set()
+        for ann in test_anns:
+            test_img_ids.add(ann['image_id'])
+        test_img_info = in_coco_ds.loadImgs(test_img_ids)
+    ann_stats(train_anns)
+    ann_stats(test_anns)
     train_json_dict['images'] = train_img_info
     test_json_dict['images'] = test_img_info
     train_json_dict['annotations'] = train_anns
     test_json_dict['annotations'] = test_anns
-    with open(train_coco_file, 'w') as train_file:
-        train_file.write(json.dumps(train_json_dict))
-    with open(test_coco_file, 'w') as test_file:
-        test_file.write(json.dumps(test_json_dict))
+    if eval_stats:
+        return
+    else:
+        with open(train_coco_file, 'w') as train_file:
+            train_file.write(json.dumps(train_json_dict))
+        with open(test_coco_file, 'w') as test_file:
+            test_file.write(json.dumps(test_json_dict))
 
 def parse_args():
     parser = argparse.ArgumentParser("""""")
@@ -153,19 +179,23 @@ def parse_args():
     parser.add_argument('--filter_rule')
     parser.add_argument('--test_ratio', default=0.25, type=float)
     parser.add_argument('--eval_stats', action='store_true')
+    parser.add_argument('--test_size_thres', default=25, type=int)
+    parser.add_argument('--size_thres_style', default='area', choices=['area', 'shorter_side'])
     return parser.parse_args()
 
 if __name__ == '__main__':
     args = parse_args()
     args.input_coco_file = '/media/yingges/Data_Junior/data/ft_pic/super_ensemble.json'
-    args.train_coco_file = '/media/yingges/Data_Junior/data/ft_pic/test/train.json'
-    args.test_coco_file = '/media/yingges/Data_Junior/data/ft_pic/test/test.json'
+    # args.train_coco_file = '/media/yingges/Data_Junior/data/ft_pic/test/train_1.json'
+    # args.test_coco_file = '/media/yingges/Data_Junior/data/ft_pic/test/test_1.json'
+    args.train_coco_file = '/media/yingges/Data_Junior/data/ft_pic/include_merged_p/train_size_thres.json'
+    args.test_coco_file = '/media/yingges/Data_Junior/data/ft_pic/include_merged_p/test_size_thres.json'
     # args.input_coco_file = '/media/yingges/Data/201910/FT/FTData/yunxikeji-01-2019-10-21/0102/ensemble.json'
     # args.train_coco_file = '/media/yingges/Data/201910/FT/FTData/yunxikeji-01-2019-10-21/0102/train.json'
     # args.test_coco_file = '/media/yingges/Data/201910/FT/FTData/yunxikeji-01-2019-10-21/0102/test.json'
     # args.filter_rule = 'exclude_p'
-    args.filter_rule = 'p_finegrained'
-    # args.filter_rule = 'include_merged_p'
+    # args.filter_rule = 'p_finegrained'
+    args.filter_rule = 'include_merged_p'
     # args.filter_rule = 'seg_a'
 
     post_proc(args.input_coco_file,
@@ -173,4 +203,6 @@ if __name__ == '__main__':
               args.train_coco_file,
               args.test_coco_file,
               args.test_ratio,
-              args.eval_stats)
+              args.eval_stats,
+              args.test_size_thres,
+              args.size_thres_style)
