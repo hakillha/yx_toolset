@@ -3,6 +3,7 @@ import shutil
 
 from glob import glob
 from os.path import join as pj
+from PIL import Image
 
 from sklearn.model_selection import train_test_split
 
@@ -37,7 +38,28 @@ def set_split(data_path, testset_path, test_ratio=0.2):
 			os.mkdir(target_dir)
 		shutil.move(f_path, target_dir)
 
+def size_filter(classify_folder_path):
+	"""
+		Args: 
+			classify_folder_path: the directory that contains the folder of each class
+
+	"""
+	# TODO: Add warning for this operation
+	# Warning: Backup your data b4 using this
+	img_path_list = []
+	for cat in os.listdir(classify_folder_path):
+		img_path_list += glob(pj(classify_folder_path, cat, '*'))
+	for img_path in img_path_list:
+		img = Image.open(img_path)
+		shorter_side = min(img.size[0], img.size[1])
+		if shorter_side < 25:
+			os.remove(img_path)
+
 if __name__ == '__main__':
 	# for cat in ['ph', 'pl', 'pm']:
 	# 	merge_cls('/media/yingges/Data_Junior/data/crop', cat)
-	set_split('/media/yingges/Data_Junior/data/classification/crop', '/media/yingges/Data_Junior/data/classification/20200107/test')
+	# set_split('/media/yingges/Data_Junior/data/classification/crop', '/media/yingges/Data_Junior/data/classification/20200107/test')
+	# size_filter('/media/yingges/Data_Junior/data/classification/20200107_test_size_thres/val')
+
+	size_filter('/media/yingges/Data_Junior/data/classification/20200107_all_size_thres/train')
+	size_filter('/media/yingges/Data_Junior/data/classification/20200107_all_size_thres/val')

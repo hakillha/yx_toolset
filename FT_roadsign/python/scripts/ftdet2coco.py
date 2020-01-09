@@ -209,7 +209,7 @@ def parse_args():
                                         For ease of tracking we store the class_name/class_id list/dictionary in the code.
                                         So please look them up in the code before using this script 
                                         and change it according to your needs.""")
-    parser.add_argument('--input_path', type=str,
+    parser.add_argument('input_path', type=str,
                                         help="""Root of the data directory. 
                                         e.g. The folder that contains "images" and "labels" folders. """)
     parser.add_argument('--train_json_file', type=str,
@@ -238,11 +238,11 @@ def parse_args():
 if __name__ == '__main__':
     args = parse_args()
 
-    args.input_path = ['/media/yingges/Data_Junior/data/ft_pic/GIS-SIGN_optimize/annotation-20191121/device_didi',
-                       '/media/yingges/Data_Junior/data/ft_pic/GIS-SIGN_arrows/arrows-20191107',
-                       '/media/yingges/Data_Junior/data/ft_pic/GIS-SIGN_02/annotation-20191205',
-                       '/media/yingges/Data_Junior/data/ft_pic/GIS-SIGN_02/online-20191128',
-                       '/media/yingges/Data/201910/FT/FTData/ft_det_cleanedup'
+    # args.input_path = ['/media/yingges/Data_Junior/data/ft_pic/GIS-SIGN_optimize/annotation-20191121/device_didi',
+    #                    '/media/yingges/Data_Junior/data/ft_pic/GIS-SIGN_arrows/arrows-20191107',
+    #                    '/media/yingges/Data_Junior/data/ft_pic/GIS-SIGN_02/annotation-20191205',
+    #                    '/media/yingges/Data_Junior/data/ft_pic/GIS-SIGN_02/online-20191128',
+    args.input_path = [                   '/media/yingges/Data/201910/FT/FTData/ft_det_cleanedup'
                        ]
 
     data_map, shuffled_list, train_size = data_conversion.parse_folder_ft_det(args.input_path, args.subfolders, args.valid_ratio)

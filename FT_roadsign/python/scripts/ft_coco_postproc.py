@@ -185,11 +185,11 @@ def parse_args():
 
 if __name__ == '__main__':
     args = parse_args()
-    args.input_coco_file = '/media/yingges/Data_Junior/data/ft_pic/super_ensemble.json'
+    args.input_coco_file = '/media/yingges/Data_Junior/data/ft_pic/ensemble.json'
     # args.train_coco_file = '/media/yingges/Data_Junior/data/ft_pic/test/train_1.json'
     # args.test_coco_file = '/media/yingges/Data_Junior/data/ft_pic/test/test_1.json'
-    args.train_coco_file = '/media/yingges/Data_Junior/data/ft_pic/include_merged_p/train_size_thres.json'
-    args.test_coco_file = '/media/yingges/Data_Junior/data/ft_pic/include_merged_p/test_size_thres.json'
+    args.train_coco_file = '/media/yingges/Data_Junior/data/ft_pic/include_merged_p/train_new_set.json'
+    args.test_coco_file = '/media/yingges/Data_Junior/data/ft_pic/include_merged_p/test_new_set.json'
     # args.input_coco_file = '/media/yingges/Data/201910/FT/FTData/yunxikeji-01-2019-10-21/0102/ensemble.json'
     # args.train_coco_file = '/media/yingges/Data/201910/FT/FTData/yunxikeji-01-2019-10-21/0102/train.json'
     # args.test_coco_file = '/media/yingges/Data/201910/FT/FTData/yunxikeji-01-2019-10-21/0102/test.json'

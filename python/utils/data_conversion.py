@@ -50,9 +50,9 @@ def parse_folder_ft_det(input_path, subfolders, valid_ratio):
     res_dict = {}
     add_item(img_list, res_dict)
     add_item(anno_list, res_dict)
-    for k, v in res_dict.items():
+    for k in list(res_dict):
         # remove that from the dict if one file(img/ann) is missing
-        if len(v) == 1:
+        if len(res_dict[k]) == 1:
             del res_dict[k]
 
     shuffled_list = list(res_dict.keys())
@@ -78,7 +78,7 @@ def parse_cats_from_annos(data_map):
                     except:
                         continue
                     cats_cnt[cls_name] += 1
-    cats = cats_cnt.keys()
+    cats = list(cats_cnt)
     cats.sort()
     cats_print = [(cat, cats_cnt[cat]) for cat in cats]
     print(cats)

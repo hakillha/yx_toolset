@@ -280,27 +280,46 @@ def data_stats(annFile, categories=None):
     with open(annFile) as file:
         json_dict = json.load(file)
     # Collect stats on the shorter side of the bbs
-    size_list = []
+    ann_size_list = []
     cls_cnt = defaultdict(int)
     if categories == None:
         cocoGt = COCO(annFile)
         categories = cocoGt.loadCats(cocoGt.getCatIds())
     print(categories)
-    total_sample_cnt = 0
+    small_cnt = 0
     for ann in json_dict['annotations']:
         cls_name = categories[ann['category_id'] - 1]['name']
-        size_list.append(min(ann['bbox'][2], ann['bbox'][3]))
+        shorter_side = min(ann['bbox'][2], ann['bbox'][3])
+        ann_size_list.append(shorter_side)
+        if shorter_side < 25:
+            small_cnt += 1
         # if cls_name.startswith('p'):
         #     cls_name = 'po'
         cls_cnt[cls_name] += 1
-        total_sample_cnt += 1
+    total_sample_cnt = len(ann_size_list)
     cls_percent = dict()
     for k, v in cls_cnt.items():
         cls_percent[k] = v / total_sample_cnt
     print('Total # of samples: {}'.format(total_sample_cnt))
     print(cls_cnt)
     print(cls_percent)
-    plt.hist(size_list, bins=20)
+    counts, edges, plot = plt.hist(ann_size_list, bins=20)
+    ann_size_percent = dict()
+    for k, v in zip(edges, counts):
+        ann_size_percent[k] = v / total_sample_cnt
+    print(ann_size_percent)
+    print(small_cnt / total_sample_cnt)
+    # plt.show()
+    plt.close()
+
+    img_size_list = []
+    for img in json_dict['images']:
+        img_size_list.append(img['height'])
+    counts, edges, plot = plt.hist(img_size_list)
+    img_size_percent = dict()
+    for k, v in zip(edges, counts):
+        img_size_percent[k] = v / len(img_size_list)
+    print(img_size_percent)
     plt.show()
 
 # PREDEFINED_CLASSES_GENERIC = ['i','p', 'wo', 'rn', 'lo', 'tl',  'ro']
@@ -319,7 +338,7 @@ def main():
                                      So please look them up in the code before using this script and change it according to your needs. 
                                      It's particularly important to match the index/id of the classes between the code and the files to 
                                      obtain a correct result.""")
-    parser.add_argument('--mode', default='eval', choices=['eval', 'viz', 'stats'],
+    parser.add_argument('mode', default='eval', choices=['eval', 'viz', 'stats'],
                                   help="""Behavior of different modes to be added here.
                                   'stats' mode requires [--anno_file_path].
                                   'viz' mode requires [--anno_file_path, --img_folder_path, 
