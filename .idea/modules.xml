@@ -1,9 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<project version="4">
-  <component name="ProjectModuleManager">
-    <modules>
-      <module fileurl="file://$PROJECT_DIR$/../../anaconda2/envs/coco/lib/python3.6/site-packages/pycocotools/.idea/pycocotools.iml" filepath="$PROJECT_DIR$/../../anaconda2/envs/coco/lib/python3.6/site-packages/pycocotools/.idea/pycocotools.iml" />
-      <module fileurl="file://$PROJECT_DIR$/.idea/yx_toolset.iml" filepath="$PROJECT_DIR$/.idea/yx_toolset.iml" />
-    </modules>
-  </component>
-</project>

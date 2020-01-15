@@ -69,6 +69,34 @@ def cls_filter(cat_name, filter_rule):
         if cat_name not in cfg['p_cls_include_list']:
             return None
 
+    if filter_rule == 'include_fg_p':
+        cfg = post_proc_cfg_det.include_fg_p
+        if cat_name in cfg['irre_cls_list']:
+            return None
+        if cfg['strip_space']:
+            cat_name = cat_name.strip()
+        # the following lines would also remove the space
+        # so be careful with the logic flow here
+        if cat_name in cfg['panel_cls_list']:
+            cat_name = 'panel'
+
+        if cat_name in cfg['i_cls_include_list']:
+            cat_name = 'i'
+        if cat_name in cfg['w_cls_include_list']:
+            cat_name = 'w'
+        if cfg['ignore_number']:
+            for pre in cfg['sign_merge_list']:
+                if cat_name.startswith(pre) and cat_name != 'panel':
+                    cat_name = pre
+        if cat_name.startswith('p') and cat_name != 'panel' and cat_name not in cfg['p_cls_include_list']:
+            return None
+        # commenting out this from the include_merged_p version
+        # to include finegrained p
+        # if cat_name in cfg['p_cls_include_list']:
+        #     cat_name = 'p'
+        if cat_name in ['sc0', 'sc1']:
+            cat_name = 'sc'
+
     if filter_rule == 'seg_a':
         cfg = post_proc_cfg_seg.seg_a
         if not cat_name in cfg['include_list']:
@@ -176,27 +204,29 @@ def parse_args():
     parser.add_argument('--input_coco_file')
     parser.add_argument('--train_coco_file')
     parser.add_argument('--test_coco_file')
+    # TODO: output the class list as well
     parser.add_argument('--filter_rule')
     parser.add_argument('--test_ratio', default=0.25, type=float)
     parser.add_argument('--eval_stats', action='store_true')
-    parser.add_argument('--test_size_thres', default=25, type=int)
+    parser.add_argument('--test_size_thres', default=0, type=int)
     parser.add_argument('--size_thres_style', default='area', choices=['area', 'shorter_side'])
     return parser.parse_args()
 
 if __name__ == '__main__':
     args = parse_args()
-    args.input_coco_file = '/media/yingges/Data_Junior/data/ft_pic/ensemble.json'
+    args.input_coco_file = '/media/yingges/Data_Junior/data/ft_pic/super_ensemble.json'
     # args.train_coco_file = '/media/yingges/Data_Junior/data/ft_pic/test/train_1.json'
     # args.test_coco_file = '/media/yingges/Data_Junior/data/ft_pic/test/test_1.json'
-    args.train_coco_file = '/media/yingges/Data_Junior/data/ft_pic/include_merged_p/train_new_set.json'
-    args.test_coco_file = '/media/yingges/Data_Junior/data/ft_pic/include_merged_p/test_new_set.json'
+    args.train_coco_file = '/media/yingges/Data_Junior/data/ft_pic/include_fg_p/train.json'
+    args.test_coco_file = '/media/yingges/Data_Junior/data/ft_pic/include_fg_p/test.json'
     # args.input_coco_file = '/media/yingges/Data/201910/FT/FTData/yunxikeji-01-2019-10-21/0102/ensemble.json'
     # args.train_coco_file = '/media/yingges/Data/201910/FT/FTData/yunxikeji-01-2019-10-21/0102/train.json'
     # args.test_coco_file = '/media/yingges/Data/201910/FT/FTData/yunxikeji-01-2019-10-21/0102/test.json'
     # args.filter_rule = 'exclude_p'
     # args.filter_rule = 'p_finegrained'
-    args.filter_rule = 'include_merged_p'
+    # args.filter_rule = 'include_merged_p'
     # args.filter_rule = 'seg_a'
+    args.filter_rule = 'include_fg_p'
 
     post_proc(args.input_coco_file,
               args.filter_rule,
