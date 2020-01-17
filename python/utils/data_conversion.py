@@ -7,13 +7,6 @@ from collections import defaultdict
 from glob import glob
 from os.path import join as pj
 
-def add_item(in_list, out_dict):
-    for item in in_list:
-        try:
-            out_dict[os.path.basename(item).split('.')[0]].append(item)
-        except:
-            out_dict[os.path.basename(item).split('.')[0]] = [item]
-
 def parse_folder_ft_det(input_path, subfolders, valid_ratio):
     """
     Point of having this as a separate interface is that
@@ -23,6 +16,8 @@ def parse_folder_ft_det(input_path, subfolders, valid_ratio):
 
     Returns:
         res_dict: {data_key: [abs_img_path, abs_label_path], ...}
+            data_key is the name of the files w/o suffix 
+            so it's the same for either img file or anno file
         shuffled_list: list of keys from above dict but shuffled to index it 
     """
     if subfolders or isinstance(input_path, list):
@@ -46,10 +41,11 @@ def parse_folder_ft_det(input_path, subfolders, valid_ratio):
         anno_list = glob(pj(input_path, 'labels', '*'))
     img_list = [im for im in img_list if im.endswith('.jpg')]
     anno_list = [ann for ann in anno_list if ann.endswith('.json')]
-    # returns a dict where each entry is a list: [abspath_to_img, abspath_to_anno]
-    res_dict = {}
-    add_item(img_list, res_dict)
-    add_item(anno_list, res_dict)
+    res_dict = defaultdict(list)
+    for im in img_list:
+        res_dict[os.path.basename(im).split('.')[0]].append(im)
+    for ann in anno_list:
+        res_dict[os.path.basename(ann).split('.')[0]].append(ann)
     for k in list(res_dict):
         # remove that from the dict if one file(img/ann) is missing
         if len(res_dict[k]) == 1:

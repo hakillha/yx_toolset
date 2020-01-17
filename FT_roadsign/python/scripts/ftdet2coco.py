@@ -12,9 +12,7 @@ from os.path import join as pj
 
 cur_path = os.path.abspath(os.path.dirname(__file__))
 sys.path.insert(0, pj(cur_path, '..', '..', '..', '..'))
-import yx_toolset.python.utils.data_conversion as data_conversion
-from yx_toolset.python.utils.data_conversion import parse_cats_from_annos
-
+from yx_toolset.python.utils.data_conversion import parse_folder_ft_det, parse_cats_from_annos
 
 PRE_DEFINE_CATEGORIES_GENERIC_UPDATED = {'i': 1, 'p': 2, 'wo': 3, 'rn': 4, 'lo': 5, 
                                          'tl': 6, 'ro': 7, 'sc0': 8, 'sc1': 9, 'ors': 10}
@@ -245,7 +243,7 @@ if __name__ == '__main__':
     args.input_path = [                   '/media/yingges/Data/201910/FT/FTData/ft_det_cleanedup'
                        ]
 
-    data_map, shuffled_list, train_size = data_conversion.parse_folder_ft_det(args.input_path, args.subfolders, args.valid_ratio)
+    data_map, shuffled_list, train_size = parse_folder_ft_det(args.input_path, args.subfolders, args.valid_ratio)
     if parse_cats_from_annos:
         categories = parse_cats_from_annos(data_map)
         categories_test = categories
