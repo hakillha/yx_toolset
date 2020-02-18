@@ -101,6 +101,12 @@ def cls_filter(cat_name, filter_rule):
         cfg = post_proc_cfg_seg.seg_a
         if not cat_name in cfg['include_list']:
             return None
+
+    if filter_rule == 'seg_b':
+        cfg = post_proc_cfg_seg.seg_b
+        if not cat_name in cfg['include_list']:
+            return None
+
     return cat_name
 
 def anns_post_proc(ann_list, filter_rule):
@@ -201,32 +207,25 @@ def post_proc(input_coco_file,
 def parse_args():
     parser = argparse.ArgumentParser("""""")
     # change to required arguments if released
-    parser.add_argument('--input_coco_file')
-    parser.add_argument('--train_coco_file')
-    parser.add_argument('--test_coco_file')
+    parser.add_argument('--input_coco_file', help='The ensemble json file where all the annotations are aggregated.')
+    parser.add_argument('--train_coco_file', help='Output training data annotations file.')
+    parser.add_argument('--test_coco_file', help='Output test data annotations file.')
     # TODO: output the class list as well
-    parser.add_argument('--filter_rule')
+    parser.add_argument('--filter_rule', 
+                        help="""Specify a data config to determine how to process the data.
+                        Check the metadata/config file to see more information of the detailed settings.""")
     parser.add_argument('--test_ratio', default=0.25, type=float)
-    parser.add_argument('--eval_stats', action='store_true')
-    parser.add_argument('--test_size_thres', default=0, type=int)
+    parser.add_argument('--eval_stats', action='store_true', 
+                        help="""Specify this to print out the data stats. The class list printed out by this script
+                        can be used to specify the classes for mmlab dataset registration.""")
+    parser.add_argument('--test_size_thres', default=0, type=int, 
+                        help="""When this is larger than 0, annotation size filtering is enabled. This is deprecated now due to 
+                        the update on FT performance protocol.""")
     parser.add_argument('--size_thres_style', default='area', choices=['area', 'shorter_side'])
     return parser.parse_args()
 
 if __name__ == '__main__':
     args = parse_args()
-    args.input_coco_file = '/media/yingges/Data_Junior/data/ft_pic/super_ensemble.json'
-    # args.train_coco_file = '/media/yingges/Data_Junior/data/ft_pic/test/train_1.json'
-    # args.test_coco_file = '/media/yingges/Data_Junior/data/ft_pic/test/test_1.json'
-    args.train_coco_file = '/media/yingges/Data_Junior/data/ft_pic/include_fg_p/train.json'
-    args.test_coco_file = '/media/yingges/Data_Junior/data/ft_pic/include_fg_p/test.json'
-    # args.input_coco_file = '/media/yingges/Data/201910/FT/FTData/yunxikeji-01-2019-10-21/0102/ensemble.json'
-    # args.train_coco_file = '/media/yingges/Data/201910/FT/FTData/yunxikeji-01-2019-10-21/0102/train.json'
-    # args.test_coco_file = '/media/yingges/Data/201910/FT/FTData/yunxikeji-01-2019-10-21/0102/test.json'
-    # args.filter_rule = 'exclude_p'
-    # args.filter_rule = 'p_finegrained'
-    # args.filter_rule = 'include_merged_p'
-    # args.filter_rule = 'seg_a'
-    args.filter_rule = 'include_fg_p'
 
     post_proc(args.input_coco_file,
               args.filter_rule,
