@@ -10,6 +10,7 @@ def extract_subset(folder_path, output_path, size=100):
     random.shuffle(all_f_names)
     sample_files = all_f_names[:size]
     img_files = [pj(folder_path, 'images', f + '.jpg') for f in sample_files]
+    #
     anno_files = [pj(folder_path, 'labels', f + '.json') for f in sample_files]
     for img, anno in zip(img_files, anno_files):
         shutil.copy(img, pj(output_path, 'images'))
@@ -21,6 +22,7 @@ def extract_splitset(json_file, data_path, output_path):
         try:
             shutil.copy(pj(data_path, 'images', im['file_name']), pj(output_path, 'images'))
             shutil.copy(pj(data_path, 'labels', im['file_name'].split('.')[0] + '.json'), pj(output_path, 'labels'))
+            # shutil.copy(pj(data_path, 'labels', im['file_name'].split('.')[0] + '.json'), pj(output_path, 'labels'))
         except IOError as err_msg:
             print(err_msg)
 
@@ -34,6 +36,6 @@ if __name__ == '__main__':
     # extract_splitset('/media/yingges/Data/201910/FT/FTData/ft_det_cleanedup/updated_generic/valid.json',
     #                  '/media/yingges/Data/201910/FT/FTData/ft_det_cleanedup',
     #                  '/media/yingges/Data/201910/FT/FTData/ft_det_cleanedup/updated_generic')
-    extract_splitset('/media/yingges/Data/201910/FT/FTData/yunxikeji-01-2019-10-21/0102/train.json',
+    extract_splitset('/media/yingges/Data/201910/FT/FTData/yunxikeji-01-2019-10-21/pre_clean_test.json',
                      '/media/yingges/Data/201910/FT/FTData/yunxikeji-01-2019-10-21',
-                     '/media/yingges/Data/201910/FT/FTData/yunxikeji-01-2019-10-21/0102/train')
+                     '/media/yingges/Data/201910/FT/FTData/yunxikeji-01-2019-10-21/sample')
