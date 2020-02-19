@@ -21,7 +21,7 @@ def extract_splitset(json_file, data_path, output_path):
     for im in json_dict['images']:
         try:
             shutil.copy(pj(data_path, 'images', im['file_name']), pj(output_path, 'images'))
-            shutil.copy(pj(data_path, 'labels', im['file_name'].split('.')[0] + '.json'), pj(output_path, 'labels'))
+            shutil.copy(pj(data_path, 'labels(cleaned_up)', im['file_name'].split('.')[0] + '.json'), pj(output_path, 'labels'))
             # shutil.copy(pj(data_path, 'labels', im['file_name'].split('.')[0] + '.json'), pj(output_path, 'labels'))
         except IOError as err_msg:
             print(err_msg)

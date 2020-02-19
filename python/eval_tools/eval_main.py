@@ -337,7 +337,9 @@ def main():
     parser = argparse.ArgumentParser(description="""For ease of tracking we store the class_name/class_id list/dictionary in the code.
                                      So please look them up in the code before using this script and change it according to your needs. 
                                      It's particularly important to match the index/id of the classes between the code and the files to 
-                                     obtain a correct result.""")
+                                     obtain a correct result.
+                                     The above description is no longer valid. The class list metadata should be stored alongside with
+                                     gt file now.""")
     parser.add_argument('mode', default='eval', choices=['eval', 'viz', 'stats'],
                                   help="""Behavior of different modes to be added here.
                                   'stats' mode requires [--anno_file_path].
@@ -353,7 +355,8 @@ def main():
                                            help='Path to a json file that stores model outputs.')
     parser.add_argument('--map_curve', default=False, action='store_true', 
                                        help="""This parameter dictates the behavior of the evaluation process. 
-                                       When this is set to true the script will calculate a 10 split global mAP curve.
+                                       When this is set to true the script will calculate a 10 split global mAP curve and the point
+                                       with the lowest confidence threshold would be the result of FT protocol.
                                        When this is left empty it will use standard COCO interfaces to perform COCO evaluation.""")
     parser.add_argument('--score_thr', default=0.2, type=float,
                                        help="""This only applies to global average precision calculation. e.g.
