@@ -45,7 +45,7 @@ def evaluate(annFile, resFile, annType):
     for idx, cls_ in enumerate(cats):
         print('{} mAP@.5: {:0.3f}'.format(cats[idx]['name'], res[idx]))
 
-def evaluate_curve(annFile, resFile, annType, score_thr, split=10):
+def evaluate_curve(annFile, resFile, annType, score_thr, segm_iou_thr, split=10):
     cocoGt = COCO(annFile)
     cocoDt = cocoGt.loadRes(resFile)
     anns = cocoDt.dataset['annotations']
@@ -55,7 +55,7 @@ def evaluate_curve(annFile, resFile, annType, score_thr, split=10):
     cocoDt.createIndex()
     cocoEval = COCOeval(cocoGt,cocoDt,annType)
     if annType == 'segm':
-        cocoEval.params.iouThrs = np.linspace(.3, 0.95, np.round((0.95 - .3) / .05) + 1, endpoint=True)
+        cocoEval.params.iouThrs = np.linspace(segm_iou_thr, 0.95, np.round((0.95 - .3) / .05) + 1, endpoint=True)
     cocoEval.evaluate()
     # maxDet = -1 # turn off maxDet
     res_summary = []
@@ -85,13 +85,19 @@ def evaluate_curve(annFile, resFile, annType, score_thr, split=10):
             rc = tp_sum_50 / npig
             pr = tp_sum_50 / (fp_sum_50+tp_sum_50+np.spacing(1))
         elif annType == 'segm':
-            tp_sum_40 = np.array(tp_sum[2])
-            fp_sum_40 = np.array(fp_sum[2])
-            # pr_iou_40
-            pr = tp_sum_40 / (fp_sum_40+tp_sum_40+np.spacing(1))
-            tp_sum_30 = np.array(tp_sum[0])
-            # rc_iou_30
-            rc = tp_sum_30 / npig
+            """Followings are double IOU thresholds code"""
+            # tp_sum_40 = np.array(tp_sum[2])
+            # fp_sum_40 = np.array(fp_sum[2])
+            # # pr_iou_40
+            # pr = tp_sum_40 / (fp_sum_40+tp_sum_40+np.spacing(1))
+            # tp_sum_30 = np.array(tp_sum[0])
+            # # rc_iou_30
+            # rc = tp_sum_30 / npig
+
+            tp_sum = np.array(tp_sum[0])
+            fp_sum = np.array(fp_sum[0])
+            rc = tp_sum / npig
+            pr = tp_sum / (fp_sum+tp_sum+np.spacing(1))
         print(cocoGt.loadCats(k + 1)[0]['name'])
         for i in range(0, len(rc), int(len(rc) / split)):
             print('ACC: {:.3f}, RECALL: {:.3f}'.format(pr[i], rc[i]))
@@ -358,11 +364,12 @@ def main():
                                        When this is set to true the script will calculate a 10 split global mAP curve and the point
                                        with the lowest confidence threshold would be the result of FT protocol.
                                        When this is left empty it will use standard COCO interfaces to perform COCO evaluation.""")
-    parser.add_argument('--score_thr', default=0.2, type=float,
+    parser.add_argument('--score_thr', default=.2, type=float,
                                        help="""This only applies to global average precision calculation. e.g.
                                        When "--map_curve" is specified.""")
     # parser.add_argument('--finegrained_cls', default=False, action='store_true')
     parser.add_argument('--output_save_path', type=str)
+    parser.add_argument('--segm_iou_thr', type=float, default=.3)
     args = parser.parse_args()
 
     # categories = PREDEFINED_CLASSES if args.finegrained_cls else PREDEFINED_CLASSES_GENERIC_UPDATED_TEST
@@ -375,7 +382,7 @@ def main():
                         save_path=args.output_save_path)
     elif args.mode == 'eval':
         if args.map_curve:
-            evaluate_curve(args.anno_file_path, args.res_file_path, args.ann_type, args.score_thr)
+            evaluate_curve(args.anno_file_path, args.res_file_path, args.ann_type, args.score_thr, args.segm_iou_thr)
         else:
             evaluate(args.anno_file_path, args.res_file_path, args.ann_type)
         data_stats(args.anno_file_path)
